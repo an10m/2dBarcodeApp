@@ -434,11 +434,11 @@ When connecting the repository to Cloudflare's Git deployment flow, use:
 ```text
 Root directory: blank when package.json is at the repository root
 Build command: npm run build
-Deploy command: npm run deploy
+Deploy command: npx wrangler deploy
 Production branch: main
 ```
 
-Do not use `npx wrangler deploy` as the deploy command by itself. The `npm run deploy` script first runs `opennextjs-cloudflare build`, which creates `.open-next/worker.js`, and then deploys that generated Worker. A direct Wrangler deploy after only `next build` produces the `Could not find compiled Open Next config` error.
+The repository's `wrangler.jsonc` contains a `build.command` hook that runs `npx opennextjs-cloudflare build` before Wrangler deploys. This creates `.open-next/worker.js` and `.open-next/assets`, so the fixed `npx wrangler deploy` command used by Workers Builds can deploy the generated Worker safely. The local `npm run deploy` script remains available for manual deployments.
 
 For a real medicine platform, create D1/R2/Turnstile resources in the Cloudflare dashboard or Wrangler and add their bindings to `wrangler.jsonc`. Do not put database credentials or private certificate storage keys in client-side environment variables.
 
