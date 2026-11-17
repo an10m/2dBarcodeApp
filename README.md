@@ -433,12 +433,12 @@ When connecting the repository to Cloudflare's Git deployment flow, use:
 
 ```text
 Root directory: blank when package.json is at the repository root
-Build command: npm run build
+Build command: npm run cloudflare:build
 Deploy command: npx wrangler deploy
 Production branch: main
 ```
 
-The repository's `wrangler.jsonc` build hook runs `npx opennextjs-cloudflare build` before the fixed `npx wrangler deploy` command runs. The package `build` script remains `next build`, which OpenNext invokes internally without recursion. The local `npm run deploy` script remains available for manual deployments.
+The package keeps `npm run build` for normal Next.js development and exposes `npm run cloudflare:build` for Workers Builds. The Cloudflare build script runs OpenNext, which internally invokes the normal `next build` script without recursion. The fixed `npx wrangler deploy` command then deploys `.open-next/worker.js`. The local `npm run deploy` script remains available for manual deployments.
 
 For a real medicine platform, create D1/R2/Turnstile resources in the Cloudflare dashboard or Wrangler and add their bindings to `wrangler.jsonc`. Do not put database credentials or private certificate storage keys in client-side environment variables.
 
