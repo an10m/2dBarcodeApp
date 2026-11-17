@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 type Barcode = { id: string; name: string; type: string; value: string; scans: number; status: "Active" | "Draft" | "Archived"; updated: string };
@@ -60,10 +61,10 @@ export default function Home() {
       <main className="main">
         <header className="topbar">
           <div><div className="eyebrow">Northstar Goods / {activeNav}</div><h1>{activeNav === "Overview" ? "Good morning, Alex." : activeNav}</h1><p className="subtitle">Your barcode operations are moving cleanly. Here is the pulse of your product identity workspace.</p></div>
-          <div className="top-actions"><button className="icon-button" aria-label="Notifications" onClick={() => notify("No new notifications")}>♢</button><button className="outline-button" onClick={() => notify("Scanner is ready to open")}>⌁&nbsp; Scan</button><button className="primary-button" onClick={() => setShowCreate(true)}>＋&nbsp; New barcode</button></div>
+          <div className="top-actions"><button className="icon-button" aria-label="Notifications" onClick={() => notify("No new notifications")}>♢</button><Link className="outline-button" href="/scan">⌁&nbsp; Scan</Link><button className="primary-button" onClick={() => setShowCreate(true)}>＋&nbsp; New barcode</button></div>
         </header>
 
-        <section className="kpi-grid" aria-label="Workspace metrics">
+        {activeNav === "Overview" && <><section className="kpi-grid" aria-label="Workspace metrics">
           <Metric label="Total barcodes" value={barcodes.length.toLocaleString()} trend="↑ 12.4% this month" />
           <Metric label="Scans this month" value="3,069" trend="↑ 8.7% vs last month" />
           <Metric label="Active products" value="92.6%" trend="↑ 3.1% completion" />
@@ -78,7 +79,10 @@ export default function Home() {
           </section>
 
           <aside className="panel"><div className="panel-header"><div><h2 className="panel-title">Activity stream</h2><p className="panel-caption">Recent changes across your workspace.</p></div><button className="icon-button" aria-label="More activity" onClick={() => notify("Showing the latest activity")}>•••</button></div><div className="activity-list"><Activity icon="✓" text="Organic Oat Milk 1L was published" time="12 min ago" /><Activity icon="↗" tone="orange" text="Import batch #104 needs review" time="48 min ago" /><Activity icon="⌁" tone="blue" text="New scan received from Berlin" time="2 hr ago" /><Activity icon="+" text="Alex added a new team member" time="Yesterday" /></div><div className="progress-block"><div className="progress-meta"><span>Monthly scan capacity</span><b>3,069 / 5,000</b></div><div className="progress-track"><div className="progress-fill" style={{ width: "61%" }} /></div></div><div className="quick-actions"><button className="quick-action" onClick={() => notify("Scanner is ready to open")}><b>⌁ Scan a code</b><span>Camera or image upload</span></button><button className="quick-action" onClick={() => notify("Import flow opened")}><b>⇧ Import batch</b><span>CSV up to 10,000 rows</span></button></div></aside>
-        </div>
+        </div></>}
+        {activeNav === "Barcode library" && <LibraryView barcodes={filteredBarcodes} query={query} setQuery={setQuery} statusFilter={statusFilter} setStatusFilter={setStatusFilter} />}
+        {activeNav === "Scan activity" && <ActivityView />}
+        {activeNav === "Imports" && <ImportsView />}
       </main>
 
       {showCreate && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowCreate(false); }}><form className="modal" onSubmit={handleCreate}><div className="modal-header"><div><h2>Create a barcode</h2><p>Start with a GS1 identifier or a product URL. You can publish it later.</p></div><button type="button" className="close" aria-label="Close" onClick={() => setShowCreate(false)}>×</button></div><div className="form-grid"><label className="form-label">Product or asset name<input className="form-input" name="name" placeholder="e.g. Alpine Trail Jacket" required /></label><label className="form-label">Barcode format<select className="form-input" name="format" defaultValue="GS1 DataMatrix"><option>GS1 DataMatrix</option><option>QR / Digital Link</option><option>Data Matrix</option></select></label><label className="form-label">Payload or GTIN<input className="form-input" name="payload" placeholder="(01)09506000134352" required /></label></div><div className="modal-actions"><button type="button" className="outline-button" onClick={() => setShowCreate(false)}>Cancel</button><button className="primary-button" type="submit">Save draft</button></div></form></div>}
@@ -89,3 +93,20 @@ export default function Home() {
 
 function Metric({ label, value, trend, neutral = false }: { label: string; value: string; trend: string; neutral?: boolean }) { return <article className="kpi"><div className="kpi-head"><span>{label}</span><span>↗</span></div><div className="kpi-value">{value}</div><div className={`kpi-trend ${neutral ? "neutral" : ""}`}>{trend}</div></article>; }
 function Activity({ icon, text, time, tone = "" }: { icon: string; text: string; time: string; tone?: string }) { return <div className="activity"><div className={`activity-icon ${tone}`}>{icon}</div><div><p>{text}</p><time>{time}</time></div></div>; }
+
+function LibraryView({ barcodes, query, setQuery, statusFilter, setStatusFilter }: { barcodes: Barcode[]; query: string; setQuery: (value: string) => void; statusFilter: string; setStatusFilter: (value: string) => void }) {
+  return <section className="panel full-panel"><div className="panel-header"><div><h2 className="panel-title">Barcode library</h2><p className="panel-caption">Search and manage every product identity in this workspace.</p></div><span className="view-count">{barcodes.length} records</span></div><div className="filter-row"><label className="search"><span>⌕</span><input aria-label="Search barcodes" placeholder="Search by name, ID, or payload" value={query} onChange={(event) => setQuery(event.target.value)} /></label><select className="select" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option>All statuses</option><option>Active</option><option>Draft</option><option>Archived</option></select></div><BarcodeTable barcodes={barcodes} /></section>;
+}
+
+function BarcodeTable({ barcodes }: { barcodes: Barcode[] }) {
+  if (!barcodes.length) return <div className="empty">No barcodes match your current filters.</div>;
+  return <table><thead><tr><th>Barcode</th><th>Format</th><th>Scans</th><th>Status</th></tr></thead><tbody>{barcodes.map((barcode) => <tr key={barcode.id}><td><div className="code-name"><div className="code-pattern" aria-hidden="true">{Array.from({ length: 25 }, (_, index) => <i key={index} />)}</div><div><b>{barcode.name}</b><span>{barcode.id} · {barcode.updated}</span></div></div></td><td><span className="muted">{barcode.type}</span></td><td><b>{barcode.scans.toLocaleString()}</b></td><td><span className={`badge ${barcode.status === "Active" ? "green" : barcode.status === "Draft" ? "orange" : "blue"}`}>{barcode.status}</span></td></tr>)}</tbody></table>;
+}
+
+function ActivityView() {
+  return <section className="panel full-panel"><div className="panel-header"><div><h2 className="panel-title">Scan activity</h2><p className="panel-caption">Verification events from pharmacies, teams, and public users.</p></div><span className="view-count">3,069 this month</span></div><div className="activity-list activity-grid"><Activity icon="✓" text="Organic Oat Milk 1L was verified" time="12 min ago · Berlin" /><Activity icon="↗" tone="orange" text="Import batch #104 needs review" time="48 min ago · Alex Kim" /><Activity icon="⌁" tone="blue" text="New public scan received" time="2 hr ago · Tashkent" /><Activity icon="!" tone="orange" text="Serial duplicate flagged for review" time="Yesterday · System" /><Activity icon="✓" text="Citrus Hand Wash 250ml was verified" time="Yesterday · Samarkand" /></div></section>;
+}
+
+function ImportsView() {
+  return <section className="panel full-panel"><div className="panel-header"><div><h2 className="panel-title">Import queue</h2><p className="panel-caption">Batch product data before it becomes part of the trusted catalog.</p></div><button className="primary-button" onClick={() => window.alert("CSV import will connect in the next backend slice.")}>⇧&nbsp; Import CSV</button></div><div className="import-list"><div className="import-row"><div><b>northstar-products-nov.csv</b><span>184 rows · Uploaded today at 09:14</span></div><span className="badge green">Ready</span></div><div className="import-row"><div><b>batch-certificates-104.csv</b><span>64 rows · Uploaded today at 08:42</span></div><span className="badge orange">Review 2</span></div><div className="import-row"><div><b>archive-products-oct.csv</b><span>1,208 rows · Completed 08 Nov 2026</span></div><span className="badge blue">Complete</span></div></div></section>;
+}

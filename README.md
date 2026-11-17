@@ -363,6 +363,80 @@ npm run lint
 npm run build
 ```
 
+## Public Scanner and Admin Platform
+
+SignalCode has two distinct audiences:
+
+### Public users: scan only
+
+The public scanner is available at `/scan`. Patients, doctors, and pharmacy staff should not need an account or access to product-management tools just to verify a package. This flow is designed to become the simple mobile-first entry point for:
+
+- Camera or image-based barcode scanning
+- Manual GTIN, serial, or payload entry
+- Product, batch, expiry, and verification status
+- Public quality-evidence summary
+- Safe guidance for expired, recalled, unknown, or suspicious results
+
+The current `/scan` page includes manual/demo verification and a camera entry point reserved for the real GS1 decoder integration.
+
+### Authenticated users: manage and administer
+
+The main dashboard is for manufacturers, workspace members, and administrators. Its menu now switches between real views:
+
+- **Overview** - metrics, recent activity, and quick actions
+- **Barcode library** - search, filter, and review product identities
+- **Scan activity** - verification events and suspicious activity signals
+- **Imports** - batch import queue and review states
+
+The dashboard's **Scan** action links to the public `/scan` experience instead of pretending that the admin dashboard is the only user flow.
+
+## Cloudflare Free Deployment
+
+The project is configured for Cloudflare Workers using the OpenNext adapter. It does not use `output: "export"`, because the future verification API and authentication need server-side Worker support.
+
+### Cloudflare services
+
+| Need | Cloudflare service | MVP usage |
+| --- | --- | --- |
+| Web application | Workers | Host the Next.js application through OpenNext. |
+| Structured data | D1 | Future medicine, batch, barcode, scan, and audit records. |
+| Certificates and reports | R2 | Future lab reports, certificates, and evidence documents. |
+| Abuse protection | Turnstile | Future public verification and report-suspicious forms. |
+| Short-lived counters | KV | Optional future rate limits and cached public status responses. |
+
+The current prototype is client-side demo data, so it does not require D1, R2, KV, or Turnstile bindings yet. Add those bindings only when the corresponding backend slice is implemented.
+
+### Required files
+
+- `wrangler.jsonc` - Worker entry point, static assets, compatibility flags, and self-reference service.
+- `open-next.config.ts` - OpenNext Cloudflare adapter configuration.
+- `.gitignore` - Excludes `.open-next` and Wrangler output.
+- `public/_headers` - Adds immutable caching for generated static assets.
+
+### Deploy commands
+
+Install Node.js 20 or newer, then run:
+
+```powershell
+cd "2dBarcodeApp"
+npm install
+npm run dev
+npm run preview
+npm run deploy
+```
+
+Authenticate Wrangler with `npx wrangler login` before the first deployment. The free deployment will use a `workers.dev` URL unless a custom domain is configured.
+
+For a real medicine platform, create D1/R2/Turnstile resources in the Cloudflare dashboard or Wrangler and add their bindings to `wrangler.jsonc`. Do not put database credentials or private certificate storage keys in client-side environment variables.
+
+### Cloudflare next steps
+
+1. Add D1 migrations for medicines, batches, barcode records, verification statuses, and audit events.
+2. Add Worker-compatible server routes for public verification and suspicious-package reports.
+3. Add R2 storage for certificates and laboratory evidence with signed access URLs.
+4. Add Turnstile to public forms and rate-limit verification requests.
+5. Add authentication and organization roles without exposing private manufacturer records to the public scanner.
+
 ## Disclaimer
 
 SignalCode is a hackathon prototype and does not currently certify, approve, or guarantee the quality, safety, or authenticity of any medicine. Any production version must be designed with pharmaceutical manufacturers, laboratories, pharmacies, healthcare professionals, regulators, security specialists, and legal experts.
