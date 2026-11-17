@@ -1,18 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "signalcode",
-  "main": ".open-next/worker.js",
   "compatibility_date": "2026-11-17",
-  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "workers_dev": true,
   "assets": {
-    "binding": "ASSETS",
-    "directory": ".open-next/assets"
-  },
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "signalcode"
-    }
-  ]
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
 }
