@@ -4,6 +4,7 @@ import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import "./styles.css";
 
+document.documentElement.lang = "uz";
 registerSW({ immediate: true });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
