@@ -2,8 +2,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "signalcode",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2025-01-01",
+  "compatibility_date": "2026-11-17",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "build": {
+    "command": "npx opennextjs-cloudflare build"
+  },
   "workers_dev": true,
   "assets": {
     "binding": "ASSETS",

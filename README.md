@@ -438,7 +438,7 @@ Deploy command: npx wrangler deploy
 Production branch: main
 ```
 
-The repository's `build` script runs `opennextjs-cloudflare build`, which creates `.open-next/worker.js` and `.open-next/assets` before the fixed `npx wrangler deploy` command runs. The local `npm run deploy` script remains available for manual deployments.
+The repository's `wrangler.jsonc` build hook runs `npx opennextjs-cloudflare build` before the fixed `npx wrangler deploy` command runs. The package `build` script remains `next build`, which OpenNext invokes internally without recursion. The local `npm run deploy` script remains available for manual deployments.
 
 For a real medicine platform, create D1/R2/Turnstile resources in the Cloudflare dashboard or Wrangler and add their bindings to `wrangler.jsonc`. Do not put database credentials or private certificate storage keys in client-side environment variables.
 
