@@ -136,3 +136,42 @@ Consumer routes and examples:
 - `/?payload=...`
 
 The consumer route remains public and read-only. Producer authentication, catalog storage, EPCIS events, and real verification records belong in a separate authenticated backend or worker rather than in the public bundle.
+
+## Pharmacy portal (third application) and database
+
+Pharmacists sign in to their own cabinet, scan or pick a batch and press **Qabul qildim** (received) or report a **deviation**. This writes to a Cloudflare D1 database, and the consumer and producer apps read the real status from it, so nobody has to change anything by hand after a phone call.
+
+- Portal UI: `index.pharmacy.html`, `src/pharmacy/`, `dist-pharmacy/`, `wrangler.pharmacy.jsonc`.
+- API + database: `worker/` (Cloudflare Worker, routes under `/api/*`), schema in `db/schema.sql`, demo batches in `db/seed.sql`.
+- Before a pharmacy confirms receipt, the passport shows **"Dorixonaga yetkazilmoqda"**; the demo "pharmacy" stage from `histories.ts` is ignored for batches that exist in the database.
+
+### One-time setup
+
+```bash
+npm install
+npx wrangler login
+npx wrangler d1 create signalcode          # copy database_id into wrangler.pharmacy.jsonc
+npm run db:init:remote                      # creates tables and demo batches
+npx wrangler secret put SESSION_SECRET --config wrangler.pharmacy.jsonc   # paste a long random string
+node scripts/create-pharmacy-user.mjs apteka1 'ChangeMe-12345' "Dorixona №1" "Samarqand" > user.sql
+npx wrangler d1 execute signalcode --remote --config wrangler.pharmacy.jsonc --file user.sql
+npm run deploy:pharmacy
+```
+
+Then set `VITE_API_URL=https://<pharmacy-worker-url>` (see `.env.example`) wherever the **consumer** and **producer** apps are built, and redeploy them. Without it they keep showing the demo data.
+
+To restrict a batch to one pharmacy, set `batches.assigned_user_id` to that user's id; otherwise any signed-in pharmacy may receive it.
+
+### Local development
+
+```bash
+npm run db:init:local
+node scripts/create-pharmacy-user.mjs apteka1 'ChangeMe-12345' "Dorixona №1" "Samarqand" > user.sql
+npx wrangler d1 execute signalcode --local --config wrangler.pharmacy.jsonc --file user.sql
+echo 'SESSION_SECRET=dev-secret-change-me-dev-secret' > .dev.vars
+npm run dev:api        # API on :8787
+npm run dev:pharmacy   # UI with /api proxied to :8787
+npm run test:worker    # API tests (node:sqlite in place of D1)
+```
+
+Adding a new batch for pharmacies to receive: insert a row into `batches` (gtin, batch, serial, name, manufacturer, payload) with `wrangler d1 execute`.

@@ -1,8 +1,12 @@
 node_modules/
 dist/
 dist-consumer/
+dist-pharmacy/
 .wrangler/
 .env*
 !.env.example
+!.env.production
 *.tsbuildinfo
 temp-files/
+.dev.vars
+user.sql

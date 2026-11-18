@@ -1,0 +1,88 @@
+/* Pharmacy portal — mobile first, same tokens as the other apps (theme.css). */
+body { background: var(--page); }
+.phShell { min-height: 100vh; padding-bottom: 80px; }
+.phLoading { padding: 60px 20px; text-align: center; color: var(--muted); }
+
+.phHeader { width: min(860px, 100%); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 16px 8px; flex-wrap: wrap; }
+.phBrand { display: flex; align-items: center; gap: 10px; }
+.phBrand strong { font-size: 18px; font-weight: 600; color: var(--ink-strong); letter-spacing: -0.02em; }
+.phBrand strong b { color: var(--ok); font-weight: 600; }
+.phBrand em { font-style: normal; font-size: 13px; color: var(--muted); padding: 4px 10px; background: var(--surface); border-radius: 10px; }
+.phMark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 12px; background: var(--dark); color: #fff; font-weight: 700; }
+.phUser { display: flex; align-items: center; gap: 12px; }
+.phUser span { display: grid; text-align: right; font-size: 14px; }
+.phUser small { color: var(--muted); font-size: 12px; }
+
+.phTabs { width: min(860px, 100%); margin: 8px auto 0; padding: 0 16px; display: flex; gap: 8px; overflow-x: auto; }
+.phTabs button { flex: none; height: 42px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; color: var(--muted); font-weight: 500; }
+.phTabs button.active { background: var(--dark); color: #fff; }
+
+.phMain { width: min(860px, 100%); margin: 14px auto 0; padding: 0 16px; }
+.phCard { background: var(--surface); border-radius: var(--radius-panel); box-shadow: var(--shadow-card); padding: 22px; display: grid; gap: 16px; }
+.phHead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.phHead h2 { margin: 0; font-size: 22px; color: var(--ink-strong); }
+.phHead p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+.phFilters { display: grid; gap: 10px; }
+.phFilters input, .phManual input, .phForm input, .phForm textarea, .phForm select, .phLoginCard input {
+  width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); color: var(--ink);
+}
+.phChips { display: flex; gap: 8px; flex-wrap: wrap; }
+.phChips button { height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 13px; }
+.phChips button.active { background: var(--ink-strong); border-color: var(--ink-strong); color: #fff; }
+
+.phList { display: grid; gap: 8px; }
+.phRow { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--line-soft); border-radius: 18px; background: var(--surface); text-align: left; }
+button.phRow:hover { background: var(--surface-soft); }
+.phRow span { display: grid; gap: 4px; min-width: 0; }
+.phRow b { font-weight: 500; color: var(--ink-strong); }
+.phRow small { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.phHint { margin: 0; color: var(--muted); font-size: 13px; }
+
+.phBadge { flex: none; font-style: normal; font-size: 12px; font-weight: 500; padding: 6px 10px; border-radius: 10px; }
+.phBadge.ok { background: var(--ok-soft); color: var(--ok-ink); }
+.phBadge.warn { background: var(--warn-soft); color: var(--warn-ink); }
+.phBadge.wait { background: var(--line-soft); color: var(--muted); }
+
+.phFacts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 0; }
+.phFacts div { padding: 12px 14px; border-radius: 14px; background: var(--surface-soft); }
+.phFacts dt { color: var(--muted); font-size: 12px; }
+.phFacts dd { margin: 4px 0 0; font-weight: 500; overflow-wrap: anywhere; }
+
+.phBanner { padding: 14px 16px; border-radius: 16px; font-weight: 500; }
+.phBanner.ok { background: var(--ok-soft); color: var(--ok-ink); }
+.phActions { display: flex; gap: 10px; flex-wrap: wrap; }
+.phForm { display: grid; gap: 12px; padding: 16px; border-radius: 18px; background: var(--surface-soft); }
+.phForm h3, .phSub { margin: 0; font-size: 16px; color: var(--ink-strong); }
+.phForm p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.phForm label, .phLoginCard label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+
+.phPrimary, .phOutline, .phGhost { height: 44px; padding: 0 20px; border-radius: 14px; font-weight: 500; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; }
+.phPrimary { background: var(--ok); color: #fff; }
+.phPrimary:disabled { opacity: 0.6; }
+.phOutline { background: var(--surface); border-color: var(--line); color: var(--ink); }
+.phGhost { background: transparent; color: var(--muted); padding: 0 10px; justify-self: start; }
+.phPrimary.big, .phOutline.big { height: 52px; flex: 1 1 200px; font-size: 16px; }
+
+.phError { padding: 12px 14px; border-radius: 14px; background: var(--warn-soft); color: var(--warn-ink); font-size: 14px; }
+.phEmpty { padding: 28px 12px; text-align: center; color: var(--muted); }
+
+.phScan { display: grid; gap: 12px; }
+.phFrame { aspect-ratio: 4 / 3; max-height: 320px; border-radius: 22px; background: var(--dark); display: grid; place-items: center; overflow: hidden; color: #777; font-size: 54px; }
+.phFrame video { width: 100%; height: 100%; object-fit: cover; }
+.phScanActions { display: flex; gap: 8px; flex-wrap: wrap; }
+.phManual { display: flex; gap: 8px; }
+
+.phStages { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.phStages li { padding: 14px 16px; border-radius: 16px; border-left: 4px solid var(--ok); background: var(--surface-soft); display: grid; gap: 4px; }
+.phStages li.warning { border-left-color: var(--warn); }
+.phStages small { color: var(--muted); font-size: 12px; }
+.phStages p { margin: 0; font-size: 14px; }
+
+.phLogin { min-height: 100vh; display: grid; place-items: center; padding: 20px 16px; }
+.phLoginCard { width: min(420px, 100%); }
+.phLoginCard h1 { margin: 4px 0 0; font-size: 26px; color: var(--ink-strong); }
+.phLoginCard p { margin: 0; color: var(--muted); font-size: 14px; }
+.phLoginCard small { color: var(--muted); font-size: 12px; }
+
+.phToast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100% - 32px); padding: 13px 20px; border-radius: 14px; background: var(--dark); color: #fff; font-size: 14px; box-shadow: var(--shadow-soft); z-index: 10; }
