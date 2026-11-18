@@ -130,6 +130,31 @@ function buildPrompt(input: SummaryInput) {
 const SYSTEM_PROMPT =
   "Siz O'zbekistondagi xaridorlar uchun mahsulot partiyasi haqida qisqa va xolis ma'lumot beruvchi yordamchisiz. Faqat berilgan faktlardan foydalaning, to'qima yo'q. Javobni faqat JSON formatida qaytaring.";
 
+type SummaryJson = { summary?: string; advice?: string; risk?: string };
+
+/** Accepts clean JSON, fenced JSON, JSON embedded in prose, or a doubly encoded JSON string. */
+function parseSummaryText(text: string): SummaryJson | null {
+  const cleaned = text.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+  const candidates = [cleaned];
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
+  if (first >= 0 && last > first) candidates.push(cleaned.slice(first, last + 1));
+
+  for (const candidate of candidates) {
+    try {
+      let value = JSON.parse(candidate) as unknown;
+      if (typeof value === "string") value = JSON.parse(value) as unknown;
+      if (value && typeof value === "object") {
+        const object = value as Record<string, unknown>;
+        if (typeof object.summary === "string" && object.summary.trim()) return object as SummaryJson;
+      }
+    } catch {
+      // try the next candidate
+    }
+  }
+  return null;
+}
+
 export async function handleSummary(request: Request, env: Env): Promise<Response> {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -145,7 +170,7 @@ export async function handleSummary(request: Request, env: Env): Promise<Respons
 
   const model = env.GEMINI_MODEL || "gemini-2.5-flash";
   const cacheKey = new Request(
-    `https://cache.signalcode.internal/ai-summary?gtin=${encodeURIComponent(input.gtin)}&batch=${encodeURIComponent(input.batch)}&received=${input.received ? 1 : 0}&stages=${input.stages.length}&warn=${input.stages.filter((stage) => stage.state === "warning").length}&model=${encodeURIComponent(model)}`,
+    `https://cache.signalcode.internal/ai-summary-v2?gtin=${encodeURIComponent(input.gtin)}&batch=${encodeURIComponent(input.batch)}&received=${input.received ? 1 : 0}&stages=${input.stages.length}&warn=${input.stages.filter((stage) => stage.state === "warning").length}&model=${encodeURIComponent(model)}`,
     { method: "GET" }
   );
   const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
@@ -175,7 +200,10 @@ export async function handleSummary(request: Request, env: Env): Promise<Respons
           contents: [{ role: "user", parts: [{ text: buildPrompt(input) }] }],
           generationConfig: {
             temperature: 0.35,
-            maxOutputTokens: 400,
+            maxOutputTokens: 900,
+            // Gemini 2.5 spends output tokens on "thinking" by default, which can truncate
+            // the JSON schema answer. This task needs no reasoning budget.
+            thinkingConfig: { thinkingBudget: 0 },
             responseMimeType: "application/json",
             responseSchema: {
               type: "OBJECT",
@@ -196,20 +224,29 @@ export async function handleSummary(request: Request, env: Env): Promise<Respons
     }
 
     const payload = (await response.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[];
     };
-    const text = payload.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
-    const cleaned = text.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    // Ignore thought parts; only the visible answer becomes the summary.
+    const text = payload.candidates?.[0]?.content?.parts
+      ?.filter((part) => !part.thought)
+      .map((part) => part.text ?? "")
+      .join("") ?? "";
+    const raw = clean(text, 1200);
+    const parsed = parseSummaryText(text);
+    const looksStructured = /^[[{"`]/.test(raw);
+    const summary = clean(parsed?.summary, 900) || (!looksStructured && raw.length >= 40 ? raw : "");
 
-    let parsed: { summary?: string; advice?: string; risk?: string } | null = null;
-    try {
-      parsed = JSON.parse(cleaned) as { summary?: string; advice?: string; risk?: string };
-    } catch {
-      parsed = null;
+    if (!summary) {
+      console.error("[ai-summary] unparsed Gemini output", raw.slice(0, 160));
+      return json(
+        { ...fallback, notice: "AI javobini o'qib bo'lmadi. Demo xulosa ko'rsatilmoqda." },
+        200,
+        { "cache-control": "no-store" }
+      );
     }
 
     const result: SummaryOutput = {
-      summary: clean(parsed?.summary, 900) || clean(cleaned, 900) || fallback.summary,
+      summary,
       advice: clean(parsed?.advice, 500) || fallback.advice,
       risk: parsed?.risk === "yuqori" || parsed?.risk === "o'rtacha" || parsed?.risk === "past" ? parsed.risk : fallback.risk,
       source: "gemini",

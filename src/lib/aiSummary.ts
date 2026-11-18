@@ -48,7 +48,7 @@ export function buildLocalSummary(
 }
 
 export function summaryCacheKey(product: SummaryProduct) {
-  return `signalcode:ai:${product.gtin}:${product.batch}`;
+  return `signalcode:ai:v2:${product.gtin}:${product.batch}`;
 }
 
 export function readCachedSummary(product: SummaryProduct): AiSummaryResult | null {
