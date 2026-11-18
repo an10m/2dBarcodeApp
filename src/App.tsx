@@ -1,30 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { ProductPassport } from "./components/ProductPassport";
-import type { PassportStage } from "./components/ProductPassport";
-import { fieldNotesStages, handWashStages, jacketStages, mugStages, oatMilkStages } from "./data/histories";
+import { BarcodeImage } from "./components/BarcodeImage";
+import { catalog, makeDraft } from "./data/catalog";
+import type { CatalogProduct } from "./data/catalog";
 import { localizeDate } from "./lib/format";
 
-type Barcode = {
-  id: string; name: string; format: string; value: string; scans: number;
-  status: "Active" | "Draft" | "Archived"; updated: string; gtin: string; batch: string;
-  serial: string; manufactureDate: string; expiryDate: string; bestBefore: string;
-  manufacturer: string; category: string; country: string; netContent: string;
-  packaging: string; lotSize: number; stages: PassportStage[];
-};
+type Barcode = CatalogProduct;
 
-const seedBarcodes: Barcode[] = [
-  { id: "BX-12480", name: "Organic Oat Milk 1L", format: "GS1 DataMatrix", value: "(01)09506000134352(10)NS20261104(21)10482001(17)271130", scans: 128462, status: "Active", updated: "Today, 09:42", gtin: "09506000134352", batch: "NS20261104", serial: "10482001", manufactureDate: "04 Nov 2026", expiryDate: "30 Nov 2027", bestBefore: "30 Nov 2027", manufacturer: "Northstar Foods LLC", category: "Plant-based beverages", country: "Uzbekistan", netContent: "1 L", packaging: "Carton, retail unit", lotSize: 48000,
-    stages: oatMilkStages },
-  { id: "BX-12479", name: "Alpine Trail Jacket", format: "GS1 Digital Link", value: "https://id.gs1.org/01/09506000184721", scans: 89243, status: "Active", updated: "Yesterday", gtin: "09506000184721", batch: "AJ20261109", serial: "847210042", manufactureDate: "09 Nov 2026", expiryDate: "Not applicable", bestBefore: "Not applicable", manufacturer: "Alpine Works AG", category: "Outdoor apparel", country: "Uzbekistan", netContent: "Size M", packaging: "Polybag, retail unit", lotSize: 12500,
-    stages: jacketStages },
-  { id: "BX-12478", name: "Citrus Hand Wash 250ml", format: "GS1 DataMatrix", value: "(01)09506000984716(10)HW261104(21)984716002", scans: 63418, status: "Active", updated: "12 Nov 2026", gtin: "09506000984716", batch: "HW261104", serial: "984716002", manufactureDate: "04 Nov 2026", expiryDate: "31 Oct 2028", bestBefore: "31 Oct 2028", manufacturer: "Northstar Consumer Care", category: "Personal care", country: "Uzbekistan", netContent: "250 ml", packaging: "Bottle, retail unit", lotSize: 76000,
-    stages: handWashStages },
-  { id: "BX-12477", name: "Studio Mug / Clay", format: "GS1 Digital Link", value: "https://id.gs1.org/01/09506000821095", scans: 21912, status: "Draft", updated: "10 Nov 2026", gtin: "09506000821095", batch: "MUG-DRAFT-04", serial: "821095104", manufactureDate: "08 Nov 2026", expiryDate: "Not applicable", bestBefore: "Not applicable", manufacturer: "Studio Northstar", category: "Tableware", country: "Uzbekistan", netContent: "1 mug", packaging: "Gift box", lotSize: 3200,
-    stages: mugStages },
-  { id: "BX-12476", name: "Field Notes No. 04", format: "GS1 DataMatrix", value: "(01)09506000018472(10)FN041108(21)184720004", scans: 7648, status: "Archived", updated: "08 Nov 2026", gtin: "09506000018472", batch: "FN041108", serial: "184720004", manufactureDate: "08 Nov 2026", expiryDate: "Not applicable", bestBefore: "Not applicable", manufacturer: "Field Station Publishing", category: "Stationery", country: "Uzbekistan", netContent: "1 notebook", packaging: "Shrink wrap", lotSize: 18000,
-    stages: fieldNotesStages }
-];
+const seedBarcodes: Barcode[] = catalog;
 
 type BarcodeDetectorResult = { rawValue: string };
 type BarcodeDetectorApi = new (options: { formats: string[] }) => { detect(source: CanvasImageSource): Promise<BarcodeDetectorResult[]> };
@@ -76,37 +60,10 @@ export default function App() {
   function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    setBarcodes((current) => [{
-      id: `BX-${12481 + current.length}`,
-      name: String(data.get("name") || "Untitled barcode"),
-      format: String(data.get("format")),
-      value: String(data.get("payload")),
-      scans: 128,
-      status: "Draft",
-      updated: "Just now",
-      gtin: String(data.get("payload") || "").replace(/\D/g, "").slice(0, 14),
-      batch: "PENDING",
-      serial: "PENDING",
-      manufactureDate: "Pending",
-      expiryDate: "Pending",
-      bestBefore: "Pending",
-      manufacturer: "Northstar Goods",
-      category: "Unclassified",
-      country: "Uzbekistan",
-      netContent: "Pending",
-      packaging: "Pending",
-      lotSize: 0,
-      stages: [{
-        date: "Bugun",
-        title: "Qoralama yaratildi",
-        detail: "Yozuv yaratildi va GS1 identifikatori tasdiqlanishini kutmoqda.",
-        location: "SignalCode ish maydoni",
-        country: "O'zbekiston",
-        state: "warning",
-        tag: "Tasdiqlash kutilmoqda",
-        kind: "release"
-      }]
-    }, ...current]);
+    setBarcodes((current) => [
+      { ...makeDraft(String(data.get("name") || ""), String(data.get("format")), String(data.get("payload"))), id: `BX-${12481 + current.length}` },
+      ...current
+    ]);
     setCreateOpen(false);
     notify("Shtrix kod qoralama sifatida saqlandi");
   }
@@ -203,7 +160,7 @@ function Library({ barcodes, query, setQuery, status, setStatus, notify, onSelec
 
 function BarcodeTable({ barcodes, onSelect }: { barcodes: Barcode[]; onSelect: (barcode: Barcode) => void }) {
   if (!barcodes.length) return <div className="empty">Filtrlarga mos shtrix kod topilmadi.</div>;
-  return <div className="tableWrap"><table><thead><tr><th>Shtrix kod</th><th>GS1 identifikatori</th><th>Skanerlar</th><th>Holati</th></tr></thead><tbody>{barcodes.map((item) => <tr key={item.id} className="clickableRow" onClick={() => onSelect(item)}><td><div className="codeName"><span className="pattern" /><div><b>{item.name}</b><small>{item.id} · {localizeDate(item.updated)}</small></div></div></td><td><b>{item.gtin}</b><small>Partiya {item.batch}</small></td><td><b>{item.scans.toLocaleString("uz-UZ")}</b></td><td><span className={`badge ${item.status.toLowerCase()}`}>{item.status === "Active" ? "Faol" : item.status === "Draft" ? "Qoralama" : "Arxivlangan"}</span></td></tr>)}</tbody></table></div>;
+  return <div className="tableWrap"><table><thead><tr><th>Shtrix kod</th><th>GS1 identifikatori</th><th>Skanerlar</th><th>Holati</th></tr></thead><tbody>{barcodes.map((item) => <tr key={item.id} className="clickableRow" onClick={() => onSelect(item)}><td><div className="codeName"><BarcodeImage className="thumb" value={item.digitalLink} format="GS1 Digital Link" scale={2} /><div><b>{item.name}</b><small>{item.id} · {localizeDate(item.updated)}</small></div></div></td><td><b>{item.gtin}</b><small>Partiya {item.batch}</small></td><td><b>{item.scans.toLocaleString("uz-UZ")}</b></td><td><span className={`badge ${item.status.toLowerCase()}`}>{item.status === "Active" ? "Faol" : item.status === "Draft" ? "Qoralama" : "Arxivlangan"}</span></td></tr>)}</tbody></table></div>;
 }
 
 function ActivityView() {
@@ -234,10 +191,12 @@ function ProductHistory({ barcode, onClose }: { barcode: Barcode; onClose: () =>
         ]}
         status={statusCopy}
         stages={barcode.stages}
-        code={barcode.value}
+        code={barcode.digitalLink}
+        codeText={barcode.value}
+        codeFormat="GS1 Digital Link"
         onBack={onClose}
         backLabel="Kutubxonaga qaytish"
-        actions={<button type="button" className="passportPrimary" onClick={() => navigator.clipboard?.writeText(barcode.value)}>Havolani nusxalash</button>}
+        actions={<button type="button" className="passportPrimary" onClick={() => navigator.clipboard?.writeText(barcode.digitalLink)}>Havolani nusxalash</button>}
       />
     </div>
   );

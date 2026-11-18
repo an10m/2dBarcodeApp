@@ -1,77 +1,17 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { ProductPassport } from "../components/ProductPassport";
-import type { PassportStage } from "../components/ProductPassport";
-import { jacketStages, oatMilkStages, paracetamolStages } from "../data/histories";
+import { catalog } from "../data/catalog";
+import type { CatalogProduct } from "../data/catalog";
 
-type Product = {
-  name: string;
-  gtin: string;
-  batch: string;
-  serial: string;
-  payload: string;
-  manufacturer: string;
-  category: string;
-  netContent: string;
-  manufactureDate: string;
-  expiryDate: string;
-  country: string;
-  description: string;
-  stages: PassportStage[];
-};
+const products = catalog;
+
+type Product = CatalogProduct;
 
 type ScanResult = {
   kind: "verified" | "unknown";
   payload: string;
   product?: Product;
 };
-
-const products: Product[] = [
-  {
-    name: "Paracetamol 500 mg",
-    gtin: "09506000487120",
-    batch: "PM-260814",
-    serial: "48120007",
-    payload: "(01)09506000487120(10)PM-260814(21)48120007(17)280814",
-    manufacturer: "PharmaMed Uzbekistan",
-    category: "Dori vositasi",
-    netContent: "20 tabletka",
-    manufactureDate: "14 avg. 2026",
-    expiryDate: "14 avg. 2028",
-    country: "O'zbekiston",
-    description: "Partiya xomashyodan dorixona javonigacha bo'lgan 9 bosqichni bosib o'tdi. Uchtasida og'ish bo'lgan, ular hal qilindi va tarixda saqlandi.",
-    stages: paracetamolStages
-  },
-  {
-    name: "Organic Oat Milk 1L",
-    gtin: "09506000134352",
-    batch: "NS20261104",
-    serial: "10482001",
-    payload: "(01)09506000134352(10)NS20261104(21)10482001(17)271130",
-    manufacturer: "Northstar Foods LLC",
-    category: "O'simlik asosidagi ichimlik",
-    netContent: "1 L",
-    manufactureDate: "04 noy. 2026",
-    expiryDate: "30 noy. 2027",
-    country: "O'zbekiston",
-    description: "Suli ichimligi Toshkent quyish zavodida ishlab chiqarilib, Berlin savdo nuqtasiga yetkazildi. Barcha bosqichlar tasdiqlangan.",
-    stages: oatMilkStages
-  },
-  {
-    name: "Alpine Trail Jacket",
-    gtin: "09506000184721",
-    batch: "AJ20261109",
-    serial: "847210042",
-    payload: "https://id.gs1.org/01/09506000184721",
-    manufacturer: "Alpine Works AG",
-    category: "Outdoor kiyim",
-    netContent: "M o'lcham",
-    manufactureDate: "09 noy. 2026",
-    expiryDate: "Amal qilmaydi",
-    country: "O'zbekiston",
-    description: "Samarqandda tikilgan kurtka partiyasi Berlin do'koniga yetkazildi. Barcha bosqichlar izohsiz o'tdi.",
-    stages: jacketStages
-  }
-];
 
 type BarcodeDetectorResult = { rawValue: string };
 type BarcodeDetectorApi = new (options: { formats: string[] }) => { detect(source: CanvasImageSource): Promise<BarcodeDetectorResult[]> };
@@ -91,20 +31,48 @@ function getUrlPayload() {
   return params.get("payload") || params.get("code") || "";
 }
 
+const fixedLength: Record<string, number> = { "01": 14, "11": 6, "13": 6, "15": 6, "17": 6, "20": 2 };
+
+/** Parses a raw GS1 element string as returned by scanners (FNC1 shown as \u001d or |). */
+function parseRawGs1(value: string) {
+  const fields: Record<string, string> = {};
+  const text = value.replace(/\u001d/g, "|");
+  let index = 0;
+
+  while (index + 1 < text.length) {
+    const ai = text.slice(index, index + 2);
+    if (!/^\d{2}$/.test(ai)) break;
+    index += 2;
+    const length = fixedLength[ai];
+    if (length) {
+      fields[ai] = text.slice(index, index + length);
+      index += length;
+    } else {
+      const separator = text.indexOf("|", index);
+      const end = separator === -1 ? text.length : separator;
+      fields[ai] = text.slice(index, end);
+      index = separator === -1 ? end : end + 1;
+    }
+  }
+
+  return fields;
+}
+
 function parseGs1Payload(value: string) {
   const compact = value.trim();
   const fields: Record<string, string> = {};
   const bracketed = Array.from(compact.matchAll(/\((\d{2})\)([^()]*)/g));
   for (const match of bracketed) fields[match[1]] = match[2];
+  if (Object.keys(fields).length) return fields;
 
-  if (!Object.keys(fields).length) {
-    const aiMatch = compact.match(/(?:\/01\/|01)(\d{14})/);
-    if (aiMatch) fields["01"] = aiMatch[1];
+  if (/^01\d{13}/.test(compact)) return parseRawGs1(compact);
 
-    for (const ai of ["10", "21", "17"]) {
-      const match = compact.match(new RegExp(`(?:\/${ai}\/|\\(${ai}\\))([A-Za-z0-9.-]+)`));
-      if (match) fields[ai] = match[1];
-    }
+  const aiMatch = compact.match(/(?:\/01\/|01)(\d{14})/);
+  if (aiMatch) fields["01"] = aiMatch[1];
+
+  for (const ai of ["10", "21", "17"]) {
+    const match = compact.match(new RegExp(`(?:\/${ai}\/|\\(${ai}\\))([A-Za-z0-9.-]+)`));
+    if (match) fields[ai] = match[1];
   }
 
   return fields;
@@ -116,7 +84,7 @@ function findProduct(value: string): Product | undefined {
   const demo = /^(demo|namuna|paracetamol)$/i.test(value.trim());
   return products.find((product) => product.gtin === gtin ||
     value.includes(product.gtin) ||
-    value.includes(product.payload) ||
+    value.includes(product.value) ||
     (demo && product === products[0]));
 }
 
@@ -145,7 +113,7 @@ export default function ConsumerApp() {
     const payload = value.trim();
     if (!payload) return;
     const product = findProduct(payload);
-    const shown = product && /^(demo|namuna|paracetamol)$/i.test(payload) ? product.payload : payload;
+    const shown = product && /^(demo|namuna|paracetamol)$/i.test(payload) ? product.value : payload;
     setCode(shown);
     setError("");
     setResult(product ? { kind: "verified", payload: shown, product } : { kind: "unknown", payload });
@@ -240,7 +208,8 @@ export default function ConsumerApp() {
         ]}
         status={{ title: "Mahsulot haqiqiy", caption: "Barcha ishlab chiqarish bosqichlari tasdiqlangan" }}
         stages={product.stages}
-        code={result.payload}
+        code={product.digitalLink}
+        codeText={product.value}
         top={<button type="button" className="consumerBrand" onClick={reset} aria-label="SignalCode asosiy sahifa"><span className="brandMark">S</span><strong>signal<b>code</b></strong></button>}
         onBack={reset}
         backLabel="Yangi kodni tekshirish"

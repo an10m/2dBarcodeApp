@@ -203,3 +203,23 @@
   .stagePlace { left: 16px; bottom: 14px; font-size: 14px; }
   .stageTag { font-size: 13px; padding: 0 12px 0 10px; }
 }
+
+.passportCode .barcodeImage { width: 160px; height: auto; justify-self: start; border: 1px solid var(--line); padding: 6px; }
+
+.barcodeWrap { display: grid; gap: 10px; justify-items: start; }
+.barcodeWrap.thumb { display: block; }
+.barcodeError { color: var(--warn-ink); font-size: 12px; }
+.codeDownload {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+.codeDownload:hover { border-color: #cfd3d9; }

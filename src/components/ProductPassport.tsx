@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BarcodeImage } from "./BarcodeImage";
 
 export type StageState = "ok" | "warning";
 export type StageKind =
@@ -32,7 +33,11 @@ type PassportProps = {
   meta: PassportMeta[];
   status: { title: string; caption: string; tone?: StageState };
   stages: PassportStage[];
+  /** GS1 Digital Link encoded into the 2D symbol. */
   code?: string;
+  codeFormat?: string;
+  /** Human readable GS1 element string printed under the symbol. */
+  codeText?: string;
   onBack?: () => void;
   backLabel?: string;
   top?: ReactNode;
@@ -92,6 +97,8 @@ export function ProductPassport({
   status,
   stages,
   code,
+  codeFormat,
+  codeText,
   onBack,
   backLabel = "Orqaga",
   top,
@@ -144,7 +151,13 @@ export function ProductPassport({
             <span><i className="warning" />Og'ish bo'ldi — hal qilindi va tarixda saqlandi</span>
           </div>
 
-          {code && <div className="passportCode"><span>2D kod</span><code>{code}</code></div>}
+          {code && (
+            <div className="passportCode">
+              <span>Mahsulotning 2D kodi · skanerlab tekshirish mumkin</span>
+              <BarcodeImage value={code} format={codeFormat ?? "GS1 Digital Link"} scale={4} downloadName={codeText ?? name} />
+              {codeText && <code>{codeText}</code>}
+            </div>
+          )}
           {actions && <div className="passportActions">{actions}</div>}
           <p className="passportNote">{footerNote} · {stages.length} bosqich{warningCount ? `, ${warningCount} ta og'ish` : ""}</p>
         </div>
