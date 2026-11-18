@@ -12,6 +12,10 @@ export interface Env {
   DB: D1Database;
   /** Long random string used to sign session cookies: `wrangler secret put SESSION_SECRET`. */
   SESSION_SECRET: string;
+  /** Google Gemini API key for the public AI summary. Optional: the API falls back to a demo summary. */
+  GEMINI_API_KEY?: string;
+  /** Gemini model id, defaults to gemini-2.5-flash. */
+  GEMINI_MODEL?: string;
 }
 
 export type UserRow = { id: number; username: string; password_hash: string; pharmacy_name: string; city: string; active: number };

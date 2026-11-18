@@ -5,6 +5,7 @@ import ConsumerApp from "./ConsumerApp";
 import "../theme.css";
 import "../components/passport.css";
 import "./consumer.css";
+import "../components/product-extras.css";
 
 document.documentElement.lang = "uz";
 registerSW({ immediate: true });

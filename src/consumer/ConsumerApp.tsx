@@ -1,78 +1,22 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { ProductPassport } from "../components/ProductPassport";
-import type { PassportStage } from "../components/ProductPassport";
-import { jacketStages, oatMilkStages, paracetamolStages } from "../data/histories";
+import { demoProducts } from "../data/demoProducts";
+import type { DemoProduct } from "../data/demoProducts";
 import { pendingPharmacyStatus, useLiveStages } from "../lib/liveStages";
+import { localizeDate } from "../lib/format";
+import { AiSummary } from "../components/AiSummary";
+import { ProductInsights } from "../components/ProductInsights";
+import { PharmacyMarket } from "../components/PharmacyMarket";
+import { getInsights } from "../data/insights";
+import { formatSom, getMarketData } from "../data/market";
 
-type Product = {
-  name: string;
-  gtin: string;
-  batch: string;
-  serial: string;
-  payload: string;
-  manufacturer: string;
-  category: string;
-  netContent: string;
-  manufactureDate: string;
-  expiryDate: string;
-  country: string;
-  description: string;
-  stages: PassportStage[];
-};
+type Product = DemoProduct;
 
 type ScanResult = {
   kind: "verified" | "unknown";
   payload: string;
   product?: Product;
 };
-
-const products: Product[] = [
-  {
-    name: "Paracetamol 500 mg",
-    gtin: "09506000487120",
-    batch: "PM-260814",
-    serial: "48120007",
-    payload: "(01)09506000487120(10)PM-260814(21)48120007(17)280814",
-    manufacturer: "PharmaMed Uzbekistan",
-    category: "Dori vositasi",
-    netContent: "20 tabletka",
-    manufactureDate: "14 avg. 2026",
-    expiryDate: "14 avg. 2028",
-    country: "O'zbekiston",
-    description: "Partiya xomashyodan dorixona javonigacha bo'lgan 9 bosqichni bosib o'tdi. Uchtasida og'ish bo'lgan, ular hal qilindi va tarixda saqlandi.",
-    stages: paracetamolStages
-  },
-  {
-    name: "Organic Oat Milk 1L",
-    gtin: "09506000134352",
-    batch: "NS20261104",
-    serial: "10482001",
-    payload: "(01)09506000134352(10)NS20261104(21)10482001(17)271130",
-    manufacturer: "Northstar Foods LLC",
-    category: "O'simlik asosidagi ichimlik",
-    netContent: "1 L",
-    manufactureDate: "04 noy. 2026",
-    expiryDate: "30 noy. 2027",
-    country: "O'zbekiston",
-    description: "Suli ichimligi Toshkent quyish zavodida ishlab chiqarilib, Berlin savdo nuqtasiga yetkazildi. Barcha bosqichlar tasdiqlangan.",
-    stages: oatMilkStages
-  },
-  {
-    name: "Alpine Trail Jacket",
-    gtin: "09506000184721",
-    batch: "AJ20261109",
-    serial: "847210042",
-    payload: "https://id.gs1.org/01/09506000184721",
-    manufacturer: "Alpine Works AG",
-    category: "Outdoor kiyim",
-    netContent: "M o'lcham",
-    manufactureDate: "09 noy. 2026",
-    expiryDate: "Amal qilmaydi",
-    country: "O'zbekiston",
-    description: "Samarqandda tikilgan kurtka partiyasi Berlin do'koniga yetkazildi. Barcha bosqichlar izohsiz o'tdi.",
-    stages: jacketStages
-  }
-];
 
 type BarcodeDetectorResult = { rawValue: string };
 type BarcodeDetectorApi = new (options: { formats: string[] }) => { detect(source: CanvasImageSource): Promise<BarcodeDetectorResult[]> };
@@ -115,10 +59,10 @@ function findProduct(value: string): Product | undefined {
   const fields = parseGs1Payload(value);
   const gtin = fields["01"] || onlyDigits(value).slice(0, 14);
   const demo = /^(demo|namuna|paracetamol)$/i.test(value.trim());
-  return products.find((product) => product.gtin === gtin ||
+  return demoProducts.find((product) => product.gtin === gtin ||
     value.includes(product.gtin) ||
-    value.includes(product.payload) ||
-    (demo && product === products[0]));
+    value.includes(product.value) ||
+    (demo && product === demoProducts[0]));
 }
 
 export default function ConsumerApp() {
@@ -128,6 +72,8 @@ export default function ConsumerApp() {
   const [cameraOn, setCameraOn] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [search, setSearch] = useState("");
+  const [searchActive, setSearchActive] = useState(false);
   const live = useLiveStages(result?.product?.stages, result?.product);
 
   useEffect(() => {
@@ -147,10 +93,20 @@ export default function ConsumerApp() {
     const payload = value.trim();
     if (!payload) return;
     const product = findProduct(payload);
-    const shown = product && /^(demo|namuna|paracetamol)$/i.test(payload) ? product.payload : payload;
+    const shown = product && /^(demo|namuna|paracetamol)$/i.test(payload) ? product.value : payload;
     setCode(shown);
     setError("");
+    setSearchActive(false);
     setResult(product ? { kind: "verified", payload: shown, product } : { kind: "unknown", payload });
+  }
+
+  function openProduct(product: Product) {
+    stopCamera();
+    setError("");
+    setCode(product.value);
+    setSearchActive(false);
+    setResult({ kind: "verified", payload: product.value, product });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function stopCamera() {
@@ -221,12 +177,22 @@ export default function ConsumerApp() {
     setResult(null);
     setCode("");
     setError("");
+    setSearch("");
+    setSearchActive(false);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     verify(code);
   }
+
+  const term = search.trim().toLowerCase();
+  const matches = demoProducts.filter((product) =>
+    !term ||
+    `${product.name} ${product.manufacturer} ${product.category} ${product.gtin} ${product.batch} ${product.serial}`
+      .toLowerCase()
+      .includes(term)
+  );
 
   if (result?.kind === "verified" && result.product) {
     const product = result.product;
@@ -238,11 +204,18 @@ export default function ConsumerApp() {
         meta={[
           { label: "Ishlab chiqaruvchi", value: product.manufacturer },
           { label: "Partiya", value: product.batch },
-          { label: "Yaroqlilik muddati", value: product.expiryDate }
+          { label: "Yaroqlilik muddati", value: localizeDate(product.expiryDate) }
         ]}
         status={live.known && !live.received ? pendingPharmacyStatus : { title: "Mahsulot haqiqiy", caption: "Barcha ishlab chiqarish bosqichlari tasdiqlangan" }}
         stages={live.stages}
-        code={result.payload}
+        detailProduct={product}
+        code={product.digitalLink}
+        codeFormat="GS1 Digital Link"
+        ai={<AiSummary product={product} stages={live.stages} received={live.received} />}
+        extras={<>
+          <ProductInsights product={product} />
+          <PharmacyMarket product={product} catalog={demoProducts} />
+        </>}
         top={<button type="button" className="consumerBrand" onClick={reset} aria-label="SignalCode asosiy sahifa"><span className="brandMark">S</span><strong>signal<b>code</b></strong></button>}
         onBack={reset}
         backLabel="Yangi kodni tekshirish"
@@ -301,6 +274,84 @@ export default function ConsumerApp() {
           <button className="button primary" type="submit">Tekshirish</button>
         </form>
         <p className="demoHint">Namuna uchun <b>demo</b> so'zini kiriting yoki <b>/verify/demo</b> sahifasini oching.</p>
+
+        <div className="divider"><span>yoki mahsulotni nomi bo'yicha qidiring</span></div>
+        <form
+          className="searchForm"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setSearchActive(true);
+          }}
+          role="search"
+        >
+          <input
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setSearchActive(true);
+            }}
+            placeholder="Mahsulot nomi, ishlab chiqaruvchi, GTIN yoki partiya"
+            aria-label="Mahsulot qidirish"
+          />
+          <button className="button primary" type="submit">
+            <span aria-hidden="true">⌕</span> Qidirish
+          </button>
+        </form>
+        <div className="searchSuggestions">
+          <span>Mashhur:</span>
+          {demoProducts.slice(0, 4).map((product) => (
+            <button
+              type="button"
+              key={product.id}
+              onClick={() => {
+                setSearch(product.name);
+                setSearchActive(true);
+              }}
+            >
+              {product.name}
+            </button>
+          ))}
+        </div>
+
+        {searchActive && (
+          <section className="consumerSearchResults" aria-label="Qidiruv natijalari">
+            <header className="searchResultsHead">
+              <h2>Qidiruv natijalari</h2>
+              <span>{matches.length} ta mahsulot</span>
+            </header>
+            {matches.length === 0 && (
+              <div className="searchEmpty">
+                <b>Mahsulot topilmadi</b>
+                <p>Nomni qisqaroq yozing yoki GTIN bo'yicha qidiring. Skanerlash ham ishlaydi.</p>
+              </div>
+            )}
+            {matches.map((product) => {
+              const insights = getInsights(product);
+              const market = getMarketData(product, demoProducts);
+              return (
+                <button
+                  type="button"
+                  className="searchResult"
+                  key={product.id}
+                  onClick={() => openProduct(product)}
+                >
+                  <span className="searchResultMark" aria-hidden="true">{product.name.slice(0, 1)}</span>
+                  <span className="searchResultText">
+                    <b>{product.name}</b>
+                    <small>{product.manufacturer} · {product.category}</small>
+                    <span className="searchResultMeta">
+                      <em>★ {insights.rating.toFixed(1)}</em>
+                      <em>{insights.count.toLocaleString("uz-UZ")} sharh</em>
+                      <em>{formatSom(market.min)} dan</em>
+                      {product.status === "Draft" && <em className="draftChip">Qoralama</em>}
+                    </span>
+                  </span>
+                  <span className="searchResultGo">Pasport →</span>
+                </button>
+              );
+            })}
+          </section>
+        )}
 
         {result?.kind === "unknown" && (
           <article className="unknownCard">

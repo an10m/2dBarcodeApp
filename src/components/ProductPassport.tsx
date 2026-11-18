@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { BarcodeImage } from "./BarcodeImage";
+import { getStageDetail } from "../data/stageDetails";
+import type { DetailProduct } from "../data/stageDetails";
 
 export type StageState = "ok" | "warning";
 export type StageKind =
@@ -13,8 +16,22 @@ export type StageKind =
   | "distribution"
   | "pharmacy";
 
+export type StageDocument = {
+  title: string;
+  num: string;
+  by: string;
+  date: string;
+  ok: boolean;
+  status: string;
+  pages: number;
+  body: { label: string; value: string }[];
+  signature: string;
+};
+
 export type PassportStage = {
   date: string;
+  /** ISO date used for chronological sorting when present. */
+  iso?: string;
   title: string;
   detail: string;
   location: string;
@@ -38,6 +55,12 @@ type PassportProps = {
   onBack?: () => void;
   backLabel?: string;
   top?: ReactNode;
+  /** AI summary shown at the very top of the product page, right under the description. */
+  ai?: ReactNode;
+  /** Comments, statistics, pharmacy prices and similar products, under the timeline. */
+  extras?: ReactNode;
+  /** Product data used to build the document cards for each stage. */
+  detailProduct?: DetailProduct;
   footerNote?: string;
   actions?: ReactNode;
 };
@@ -77,12 +100,28 @@ function StageIcon({ kind }: { kind: StageKind }) {
 }
 
 function splitDate(value: string) {
-  const match = value.match(/^\s*(\d{1,2})\s+([A-Za-zÀ-ÿ'’.]+)/);
+  const match = value.match(/^\s*(\d{1,2})(?:\s*[–—-]\s*\d{1,2})?\s+([A-Za-zÀ-ÿ'’.]+)/);
   if (!match) return { month: "BUGUN", day: value.slice(0, 2).toUpperCase() };
   const monthIndex = monthNames.findIndex((month) => month.toLowerCase().startsWith(match[2].slice(0, 3).toLowerCase()));
   return {
     month: monthIndex >= 0 ? monthNames[monthIndex] : match[2].slice(0, 4).toUpperCase(),
     day: match[1].padStart(2, "0")
+  };
+}
+
+function fallbackProduct(name: string, meta: PassportMeta[]): DetailProduct {
+  const value = (label: string) => meta.find((row) => row.label.toLowerCase().includes(label))?.value ?? "";
+  return {
+    name,
+    gtin: value("gtin"),
+    batch: value("partiya"),
+    serial: "",
+    manufacturer: value("ishlab chiqaruvchi") || value("manufacturer"),
+    category: "",
+    netContent: "",
+    manufactureDate: "",
+    expiryDate: value("muddat"),
+    country: "O'zbekiston"
   };
 }
 
@@ -98,11 +137,43 @@ export function ProductPassport({
   onBack,
   backLabel = "Orqaga",
   top,
-  footerNote = "Namoyish ma'lumotlari (o'ylab topilgan)",
+  ai,
+  extras,
+  detailProduct,
+  footerNote = "Partiya hujjatlari va tekshiruv natijalari",
   actions
 }: PassportProps) {
   const warningCount = stages.filter((stage) => stage.state === "warning").length;
   const tone = status.tone ?? "ok";
+  const [openStage, setOpenStage] = useState<number | null>(null);
+  const [openDoc, setOpenDoc] = useState<number | null>(null);
+
+  // Newest first: the array is built chronologically, so reverse it for display.
+  const orderedStages = [...stages].reverse();
+  const product = detailProduct ?? fallbackProduct(name, meta);
+
+  useEffect(() => {
+    if (openStage === null) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpenStage(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [openStage]);
+
+  const selected = openStage === null ? null : orderedStages[openStage];
+  const selectedNo = openStage === null ? 0 : stages.length - openStage;
+  const detail = selected ? getStageDetail(product, selected, selectedNo) : null;
+
+  function openStageAt(index: number) {
+    setOpenDoc(null);
+    setOpenStage(index);
+  }
 
   return (
     <div className="passport">
@@ -119,6 +190,8 @@ export function ProductPassport({
           <p className="passportEyebrow">{eyebrow}</p>
           <h1>{name}</h1>
           <p className="passportDescription">{description}</p>
+
+          {ai}
 
           <div className="passportMeta">
             {meta.map((row) => (
@@ -149,18 +222,32 @@ export function ProductPassport({
 
           {code && <div className="passportCode"><span>2D kod</span><BarcodeImage value={code} format={codeFormat} scale={4} /><code>{code}</code></div>}
           {actions && <div className="passportActions">{actions}</div>}
-          <p className="passportNote">{footerNote} · {stages.length} bosqich{warningCount ? `, ${warningCount} ta og'ish` : ""}</p>
+          <p className="passportNote">{footerNote} · {stages.length} bosqich{warningCount ? `, ${warningCount} ta og'ish` : ""} · eng yangi bosqich yuqorida</p>
         </div>
       </aside>
 
       <section className="passportTimeline" aria-label="Partiya bosqichlari">
         <ol className="stageList">
-          {stages.map((stage, index) => {
+          {orderedStages.map((stage, index) => {
             const { month, day } = splitDate(stage.date);
+            const stepNo = stages.length - index;
+            const stageDetail = getStageDetail(product, stage, stepNo);
             return (
               <li className={`stage stage-${index % 2 === 0 ? "left" : "right"}`} key={`${stage.date}-${stage.title}`}>
-                <div className={`stageNode ${stage.state}`}>{index + 1}</div>
-                <article className={`stageCard ${stage.state}`}>
+                <div className={`stageNode ${stage.state}`}>{stepNo}</div>
+                <article
+                  className={`stageCard ${stage.state} clickableStage`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${stage.title} — batafsil ma'lumot va hujjatlar`}
+                  onClick={() => openStageAt(index)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openStageAt(index);
+                    }
+                  }}
+                >
                   <header className="stageTop">
                     <span className={`stageTag ${stage.state}`}>
                       {stage.state === "ok"
@@ -178,6 +265,16 @@ export function ProductPassport({
                       <div><span>{stage.location}</span><span>{stage.country}</span></div>
                     </div>
                   </div>
+                  <footer className="stageFoot">
+                    <span className="stageDocs">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                        <path d="M14 3v5h5M9 13h6M9 17h4" />
+                      </svg>
+                      {stageDetail.docs.length} hujjat
+                    </span>
+                    <span className="stageMore">Batafsil →</span>
+                  </footer>
                 </article>
               </li>
             );
@@ -186,7 +283,119 @@ export function ProductPassport({
         <div className="stageFade" aria-hidden="true">
           <span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></span>
         </div>
+        {extras}
       </section>
+
+      {selected && detail && (
+        <div className="stageModalBackdrop" onMouseDown={(event) => event.target === event.currentTarget && setOpenStage(null)}>
+          <article className="stageModal" role="dialog" aria-modal="true" aria-label={`${selectedNo}-bosqich: ${selected.title}`}>
+            <header className="stageModalHeader">
+              <div className="stageModalTop">
+                <span className="stageModalStep">Bosqich {String(selectedNo).padStart(2, "0")}</span>
+                <span className={`stageTag ${selected.state}`}>
+                  {selected.state === "ok" ? "Tasdiqlangan" : "Og'ish hal qilindi"}
+                </span>
+              </div>
+              <button type="button" className="stageModalClose" onClick={() => setOpenStage(null)} aria-label="Yopish">×</button>
+              <h2>{selected.title}</h2>
+              <p className="stageModalMeta">{selected.date} · {selected.location}, {selected.country}</p>
+              <p className="stageModalDesc">{selected.detail}</p>
+            </header>
+
+            <div className="stageModalBody">
+              {detail.issue && (
+                <section className="stageDetailBlock issueBlock">
+                  <h3>Og'ish tafsilotlari</h3>
+                  <dl className="detailKv">
+                    {detail.issue.map((row) => (
+                      <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>
+                    ))}
+                  </dl>
+                </section>
+              )}
+
+              <section className="stageDetailBlock">
+                <h3>Bosqich ma'lumotlari</h3>
+                <dl className="detailKv">
+                  {detail.info.map((row) => (
+                    <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>
+                  ))}
+                </dl>
+              </section>
+
+              <section className="stageDetailBlock">
+                <h3>Hujjatlar <span className="detailCount">{detail.docs.length}</span></h3>
+                <div className="docList">
+                  {detail.docs.map((doc, index) => (
+                    <div className={`docItem ${openDoc === index ? "open" : ""}`} key={`${doc.num}-${index}`}>
+                      <button
+                        type="button"
+                        className="docRow"
+                        onClick={() => setOpenDoc(openDoc === index ? null : index)}
+                        aria-expanded={openDoc === index}
+                      >
+                        <span className="docIcon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 3v5h5M9 13h6M9 17h4" />
+                          </svg>
+                        </span>
+                        <span className="docText">
+                          <b>{doc.title}</b>
+                          <small>{doc.num} · {doc.by} · {doc.date}</small>
+                        </span>
+                        <span className={`docStatus ${doc.ok ? "ok" : "warn"}`}>{doc.ok ? "Tasdiqlangan" : "Eslatma"}</span>
+                        <span className="docChevron" aria-hidden="true">{openDoc === index ? "−" : "+"}</span>
+                      </button>
+                      {openDoc === index && (
+                        <div className="docPaper">
+                          <div className="docPaperHead">
+                            <div>
+                              <b>{doc.title}</b>
+                              <small>{doc.num}</small>
+                            </div>
+                            <span>{doc.date}</span>
+                          </div>
+                          <dl className="docPaperBody">
+                            {doc.body.map((row) => (
+                              <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>
+                            ))}
+                            <div><dt>Hujjat holati</dt><dd>{doc.status}</dd></div>
+                          </dl>
+                          <div className="docSignature">
+                            <span>{doc.signature}</span>
+                            <em>{doc.pages} bet · elektron nusxa</em>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="stageDetailBlock">
+                <h3>Mas'ul shaxs</h3>
+                <dl className="detailKv">
+                  {detail.who.map((row) => (
+                    <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>
+                  ))}
+                </dl>
+              </section>
+
+              {detail.extra && <p className="stageDetailExtra">{detail.extra}</p>}
+
+              <div className="stageModalNav">
+                <button type="button" disabled={selectedNo <= 1} onClick={() => openStageAt(openStage! + 1)}>
+                  ← Oldingi bosqich
+                </button>
+                <button type="button" disabled={selectedNo >= stages.length} onClick={() => openStageAt(openStage! - 1)}>
+                  Keyingi bosqich →
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      )}
     </div>
   );
 }

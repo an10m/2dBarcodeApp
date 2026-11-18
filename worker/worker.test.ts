@@ -157,3 +157,32 @@ test("cross-origin POST is refused", async () => {
   }), env);
   assert.equal(res.status, 403);
 });
+
+test("public AI summary falls back when GEMINI_API_KEY is missing", async () => {
+  const { env } = setup();
+  const res = await call(env, "/api/public/summary", {
+    body: {
+      name: "Paracetamol 500 mg",
+      manufacturer: "PharmaMed Uzbekistan",
+      gtin: "09506000487120",
+      batch: "PM-260814",
+      stages: [
+        { title: "Ishlab chiqarish", state: "ok", date: "14 avg. 2026" },
+        { title: "Laboratoriya nazorati", state: "warning", date: "24 avg. 2026" }
+      ]
+    }
+  });
+  assert.equal(res.status, 200);
+  const data = (await res.json()) as { source: string; summary: string; risk: string; notice?: string };
+  assert.equal(data.source, "fallback");
+  assert.match(data.summary, /Paracetamol 500 mg/);
+  assert.equal(data.risk, "o'rtacha");
+  assert.ok(data.notice);
+});
+
+test("public AI summary answers CORS preflight", async () => {
+  const { env } = setup();
+  const res = await handle(new Request("https://x.test/api/public/summary", { method: "OPTIONS" }), env);
+  assert.equal(res.status, 204);
+  assert.equal(res.headers.get("access-control-allow-origin"), "*");
+});

@@ -6,7 +6,7 @@ import type { PassportStage } from "../components/ProductPassport";
  * https://2dbarcodeapp-pharmacy.<account>.workers.dev  — set VITE_API_URL at build time.
  * When it is empty the apps behave exactly as before and show the demo fixtures.
  */
-const API_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? "").replace(/\/+$/, "");
+export const API_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? "").replace(/\/+$/, "");
 
 type LiveResponse = {
   known: boolean;

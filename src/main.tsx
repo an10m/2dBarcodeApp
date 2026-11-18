@@ -5,6 +5,7 @@ import App from "./App";
 import "./theme.css";
 import "./components/passport.css";
 import "./styles.css";
+import "./components/product-extras.css";
 
 document.documentElement.lang = "uz";
 registerSW({ immediate: true });

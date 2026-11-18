@@ -3,30 +3,17 @@ import type { ChangeEvent, FormEvent } from "react";
 import { ProductPassport } from "./components/ProductPassport";
 import { BarcodeImage } from "./components/BarcodeImage";
 import type { PassportStage } from "./components/ProductPassport";
-import { fieldNotesStages, handWashStages, jacketStages, mugStages, oatMilkStages } from "./data/histories";
+import { CONSUMER_ORIGIN, demoProducts } from "./data/demoProducts";
+import type { DemoProduct } from "./data/demoProducts";
 import { localizeDate } from "./lib/format";
 import { pendingPharmacyStatus, useLiveStages } from "./lib/liveStages";
+import { AiSummary } from "./components/AiSummary";
+import { ProductInsights } from "./components/ProductInsights";
+import { PharmacyMarket } from "./components/PharmacyMarket";
 
-type Barcode = {
-  id: string; name: string; format: string; value: string; scans: number;
-  status: "Active" | "Draft" | "Archived"; updated: string; gtin: string; batch: string;
-  serial: string; manufactureDate: string; expiryDate: string; bestBefore: string;
-  manufacturer: string; category: string; country: string; netContent: string;
-  packaging: string; lotSize: number; stages: PassportStage[];
-};
+type Barcode = DemoProduct;
 
-const seedBarcodes: Barcode[] = [
-  { id: "BX-12480", name: "Organic Oat Milk 1L", format: "GS1 DataMatrix", value: "(01)09506000134352(10)NS20261104(21)10482001(17)271130", scans: 128462, status: "Active", updated: "Today, 09:42", gtin: "09506000134352", batch: "NS20261104", serial: "10482001", manufactureDate: "04 Nov 2026", expiryDate: "30 Nov 2027", bestBefore: "30 Nov 2027", manufacturer: "Northstar Foods LLC", category: "Plant-based beverages", country: "Uzbekistan", netContent: "1 L", packaging: "Carton, retail unit", lotSize: 48000,
-    stages: oatMilkStages },
-  { id: "BX-12479", name: "Alpine Trail Jacket", format: "GS1 Digital Link", value: "https://id.gs1.org/01/09506000184721", scans: 89243, status: "Active", updated: "Yesterday", gtin: "09506000184721", batch: "AJ20261109", serial: "847210042", manufactureDate: "09 Nov 2026", expiryDate: "Not applicable", bestBefore: "Not applicable", manufacturer: "Alpine Works AG", category: "Outdoor apparel", country: "Uzbekistan", netContent: "Size M", packaging: "Polybag, retail unit", lotSize: 12500,
-    stages: jacketStages },
-  { id: "BX-12478", name: "Citrus Hand Wash 250ml", format: "GS1 DataMatrix", value: "(01)09506000984716(10)HW261104(21)984716002", scans: 63418, status: "Active", updated: "12 Nov 2026", gtin: "09506000984716", batch: "HW261104", serial: "984716002", manufactureDate: "04 Nov 2026", expiryDate: "31 Oct 2028", bestBefore: "31 Oct 2028", manufacturer: "Northstar Consumer Care", category: "Personal care", country: "Uzbekistan", netContent: "250 ml", packaging: "Bottle, retail unit", lotSize: 76000,
-    stages: handWashStages },
-  { id: "BX-12477", name: "Studio Mug / Clay", format: "GS1 Digital Link", value: "https://id.gs1.org/01/09506000821095", scans: 21912, status: "Draft", updated: "10 Nov 2026", gtin: "09506000821095", batch: "MUG-DRAFT-04", serial: "821095104", manufactureDate: "08 Nov 2026", expiryDate: "Not applicable", bestBefore: "Not applicable", manufacturer: "Studio Northstar", category: "Tableware", country: "Uzbekistan", netContent: "1 mug", packaging: "Gift box", lotSize: 3200,
-    stages: mugStages },
-  { id: "BX-12476", name: "Field Notes No. 04", format: "GS1 DataMatrix", value: "(01)09506000018472(10)FN041108(21)184720004", scans: 7648, status: "Archived", updated: "08 Nov 2026", gtin: "09506000018472", batch: "FN041108", serial: "184720004", manufactureDate: "08 Nov 2026", expiryDate: "Not applicable", bestBefore: "Not applicable", manufacturer: "Field Station Publishing", category: "Stationery", country: "Uzbekistan", netContent: "1 notebook", packaging: "Shrink wrap", lotSize: 18000,
-    stages: fieldNotesStages }
-];
+const seedBarcodes: Barcode[] = demoProducts;
 
 type BarcodeDetectorResult = { rawValue: string };
 type BarcodeDetectorApi = new (options: { formats: string[] }) => { detect(source: CanvasImageSource): Promise<BarcodeDetectorResult[]> };
@@ -78,15 +65,18 @@ export default function App() {
   function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const payload = String(data.get("payload") || "");
+    const gtin = payload.replace(/\D/g, "").slice(0, 14);
     setBarcodes((current) => [{
       id: `BX-${12481 + current.length}`,
       name: String(data.get("name") || "Untitled barcode"),
       format: String(data.get("format")),
-      value: String(data.get("payload")),
+      value: payload,
+      digitalLink: `${CONSUMER_ORIGIN}/01/${gtin}`,
       scans: 128,
       status: "Draft",
       updated: "Just now",
-      gtin: String(data.get("payload") || "").replace(/\D/g, "").slice(0, 14),
+      gtin,
       batch: "PENDING",
       serial: "PENDING",
       manufactureDate: "Pending",
@@ -98,6 +88,7 @@ export default function App() {
       netContent: "Pending",
       packaging: "Pending",
       lotSize: 0,
+      description: "Yangi yozuv yaratildi va GS1 identifikatori tasdiqlanishini kutmoqda.",
       stages: [{
         date: "Bugun",
         title: "Qoralama yaratildi",
@@ -241,6 +232,12 @@ function ProductHistory({ barcode, onClose }: { barcode: Barcode; onClose: () =>
         stages={live.stages}
         code={barcode.value}
         codeFormat={barcode.format}
+        detailProduct={barcode}
+        ai={<AiSummary product={barcode} stages={live.stages} received={live.received} />}
+        extras={<>
+          <ProductInsights product={barcode} />
+          <PharmacyMarket product={barcode} catalog={demoProducts} />
+        </>}
         onBack={onClose}
         backLabel="Kutubxonaga qaytish"
         actions={<button type="button" className="passportPrimary" onClick={() => navigator.clipboard?.writeText(barcode.value)}>Havolani nusxalash</button>}
@@ -325,6 +322,7 @@ function ScanPage({ onBack, barcodes, onOpenPassport }: { onBack: () => void; ba
       <form className="verifyForm" onSubmit={(event) => { event.preventDefault(); verify(code); }}><input value={code} onChange={(event) => setCode(event.target.value)} placeholder="GTIN, seriya yoki shtrix kod ma'lumoti" required /><button className="primaryButton">Dorini tekshirish →</button></form>
       {verifiedCode && <article className="result">
         <div className="resultTop"><div><small>SignalCode natijasi · GS1 EPCIS tekshiruvi</small><h2>{match ? match.name : "Yozuv topilmadi"}</h2></div><b>{match ? "✓ Tasdiqlangan mahsulot" : "! Tekshiruvni talab qiladi"}</b></div>
+        {match && <AiSummary product={match} stages={match.stages} />}
         <div className="resultCode"><span>Tekshirilgan kod</span><code>{verifiedCode}</code></div>
         <div className="resultGrid">
           <div><span>Ishlab chiqaruvchi</span><b>{match ? match.manufacturer : "Aniqlanmadi"}</b></div>

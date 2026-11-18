@@ -1,6 +1,7 @@
 import type { Env, UserRow } from "./types";
 import { signToken, verifyPassword, verifyToken } from "./crypto";
 import { parseCode } from "./code";
+import { handleSummary } from "./summary";
 
 const COOKIE = "sc_session";
 const SESSION_SECONDS = 12 * 60 * 60;
@@ -156,6 +157,8 @@ export async function handle(request: Request, env: Env, now = Date.now()): Prom
     const stages = events.map(toStage);
     return json({ known: true, received: events.some((e) => e.event_type === "received"), stages }, 200, { ...CORS, "cache-control": "no-store" });
   }
+
+  if (path === "/api/public/summary") return handleSummary(request, env);
 
   if (!path.startsWith("/api/")) return err(404, "not_found");
 
