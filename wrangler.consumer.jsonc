@@ -2,7 +2,7 @@
   // Wrangler does not auto-discover this filename. Always deploy with
   // `npm run ci:deploy:consumer` or `--config wrangler.consumer.jsonc`.
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "signalcode-verify",
+  "name": "2dbarcodeapp-consumer",
   "compatibility_date": "2026-11-17",
   "assets": {
     "directory": "./dist-consumer",

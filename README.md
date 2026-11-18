@@ -90,7 +90,7 @@ Deploy both workers:
 npm run deploy:all
 ```
 
-The worker names are `signalcode-producer` and `signalcode-verify`. The scripts always pass an explicit Wrangler config:
+The Worker project names are `2dbarcodeapp` for the producer dashboard and `2dbarcodeapp-consumer` for the public consumer site. The scripts always pass an explicit Wrangler config:
 
 | Script | Build output | Wrangler config |
 | --- | --- | --- |
@@ -101,23 +101,23 @@ The worker names are `signalcode-producer` and `signalcode-verify`. The scripts 
 
 Both Workers are connected to this repository, so each Worker needs its own build and deploy commands. Use these settings in **Worker → Settings → Build**:
 
-| Setting | `signalcode-producer` | `signalcode-verify` |
+| Setting | `2dbarcodeapp` | `2dbarcodeapp-consumer` |
 | --- | --- | --- |
 | Root directory | `/` | `/` |
 | Build command | `npm run build:producer` | `npm run build:consumer` |
 | Deploy command | `npm run ci:deploy:producer` | `npm run ci:deploy:consumer` |
 
-Do not use the default `npx wrangler deploy` command. Wrangler only auto-discovers `wrangler.toml`, `wrangler.json`, and `wrangler.jsonc`, so it always chooses `wrangler.jsonc` here and deploys the producer assets to `signalcode-producer` — even from the consumer Worker's build. The `ci:deploy:*` scripts always pass the correct `--config` flag.
+Do not use the default `npx wrangler deploy` command. Wrangler only auto-discovers `wrangler.toml`, `wrangler.json`, and `wrangler.jsonc`, so it always chooses `wrangler.jsonc` here and builds the producer app, even from the consumer Worker's build. The `ci:deploy:*` scripts always pass the correct `--config` flag.
 
 If preview builds are enabled, use the matching preview scripts:
 
-| Setting | `signalcode-producer` | `signalcode-verify` |
+| Setting | `2dbarcodeapp` | `2dbarcodeapp-consumer` |
 | --- | --- | --- |
 | Preview command | `npm run ci:preview:producer` | `npm run ci:preview:consumer` |
 
 The consumer build compiles `index.consumer.html`, renames the output to `dist-consumer/index.html` for Workers Static Assets, and runs `scripts/verify-consumer-build.mjs`. The build fails before deployment if the root HTML file or service worker precache entry is wrong.
 
-After deployment, add the custom domain only to the `signalcode-verify` Worker. If that hostname previously served the producer app, unregister the old producer service worker and clear site data in the browser, then purge the Cloudflare cache. Use the consumer HTTPS origin in every generated GS1 Digital Link or QR/DataMatrix payload.
+After deployment, add the custom domain only to the `2dbarcodeapp-consumer` Worker. If that hostname previously served the producer app, unregister the old producer service worker and clear site data in the browser, then purge the Cloudflare cache. Use the consumer HTTPS origin in every generated GS1 Digital Link or QR/DataMatrix payload.
 
 Consumer routes and examples:
 
