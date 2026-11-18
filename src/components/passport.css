@@ -1,19 +1,41 @@
 .passport {
   display: flex;
-  align-items: flex-start;
-  gap: 40px;
-  width: min(1680px, 100%);
+  align-items: stretch;
+  gap: 18px;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
   margin: 0 auto;
-  padding: 48px 48px 72px;
+  padding: 18px;
+  overflow: hidden;
 }
 
-.passportIntro {
-  position: sticky;
-  top: 0;
-  flex: 0 0 404px;
-  padding-top: 6px;
+/* Two independent, rounded panels floating above the page background. */
+.passportIntro,
+.passportTimeline {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #cdd3dc transparent;
+  border-radius: 34px;
+  background: var(--surface);
+  box-shadow: 0 24px 50px -28px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.04);
 }
-.passportIntroInner { padding-bottom: 24px; }
+.passportIntro::-webkit-scrollbar,
+.passportTimeline::-webkit-scrollbar { width: 8px; }
+.passportIntro::-webkit-scrollbar-thumb,
+.passportTimeline::-webkit-scrollbar-thumb { border-radius: 8px; background: #d3d8e0; border: 2px solid #fff; }
+.passportIntro::-webkit-scrollbar-track,
+.passportTimeline::-webkit-scrollbar-track { background: transparent; }
+
+.passportIntro {
+  position: relative;
+  flex: 0 0 430px;
+  padding: 30px 30px 40px;
+}
+.passportIntroInner { padding-bottom: 0; }
 .passportTopBar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
 
 .passportBack {
@@ -96,7 +118,7 @@
 .passportPrimary:hover { background: var(--dark-soft); transform: translateY(-1px); }
 .passportNote { margin: 24px 0 0; color: var(--muted); font-size: 13px; }
 
-.passportTimeline { position: relative; flex: 1; min-width: 0; padding-bottom: 24px; }
+.passportTimeline { position: relative; flex: 1; min-width: 0; padding: 30px 30px 46px; }
 .stageList { position: relative; display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .stageList::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #d3d7dd; }
 
@@ -176,8 +198,9 @@
 .stageFade { display: none; }
 
 @media (max-width: 1180px) {
-  .passport { gap: 30px; padding: 36px 28px 56px; }
-  .passportIntro { flex-basis: 340px; }
+  .passport { gap: 14px; padding: 12px; }
+  .passportIntro { flex-basis: 350px; padding: 24px 22px 32px; }
+  .passportTimeline { padding: 24px 22px 36px; }
   .passport h1 { font-size: clamp(32px, 4.6vw, 44px); }
   .stage { grid-template-columns: minmax(0, 1fr) 68px minmax(0, 1fr); }
   .stageCard { min-height: 0; }
@@ -185,12 +208,14 @@
 }
 
 @media (max-width: 1000px) {
-  .passport { flex-direction: column; gap: 8px; padding: 24px 16px 56px; }
-  .passportIntro { position: static; flex: none; width: 100%; }
+  .passport { flex-direction: column; height: auto; overflow: visible; gap: 12px; padding: 12px 12px 40px; }
+  .passportIntro,
+  .passportTimeline { height: auto; overflow: visible; border-radius: 28px; }
+  .passportIntro { position: static; flex: none; width: 100%; padding: 24px 20px 30px; }
   .passportEyebrow { margin-top: 26px; }
   .passportDescription { max-width: none; }
   .passportMetaRow { font-size: 14px; }
-  .passportTimeline { width: 100%; margin-top: 28px; }
+  .passportTimeline { width: 100%; margin-top: 0; padding: 24px 18px 30px; }
 
   .stageList::before { left: 26px; }
   .stage { grid-template-columns: 52px minmax(0, 1fr); gap: 0 14px; }
@@ -205,3 +230,12 @@
 }
 
 .passportCode .barcodeImage { width: 160px; height: auto; justify-self: start; border: 1px solid var(--line); padding: 6px; }
+
+/* Content inside the right panel sits on a softer surface than the panel itself. */
+.passportTimeline .extraPanel { background: var(--surface-soft); box-shadow: none; border: 1px solid var(--line-soft); }
+.passportTimeline .extraPanel .commentCard,
+.passportTimeline .extraPanel .offerRow { background: var(--surface); }
+
+@media (max-width: 1000px) {
+  .passportTimeline .extraPanel { padding: 20px 16px 22px; }
+}

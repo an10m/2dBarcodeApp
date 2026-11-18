@@ -22,8 +22,6 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.aiSource { color: #1d3f8f; font-size: 12px; font-weight: 500; }
-.aiSource.fallback { color: var(--muted); }
 .aiText { margin: 14px 0 0; color: #1f2d4a; font-size: 15px; line-height: 1.5; }
 .aiAdvice { margin: 12px 0 0; padding: 12px 14px; border-radius: 14px; background: #fff; color: #33415c; font-size: 14px; line-height: 1.45; }
 .aiAdvice b { font-weight: 600; }

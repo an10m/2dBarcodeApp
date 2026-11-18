@@ -90,9 +90,6 @@ export function AiSummary({ product, stages, received = false }: Props) {
         <span className="aiBadge">
           <span aria-hidden="true">✦</span> AI xulosasi
         </span>
-        <span className={`aiSource ${state.source}`}>
-          {loading ? "tayyorlanmoqda…" : state.source === "gemini" ? `Gemini${state.model ? ` · ${state.model}` : ""}` : "Demo xulosa"}
-        </span>
       </header>
 
       {loading ? (
