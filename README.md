@@ -60,6 +60,15 @@ Preview the consumer application:
 npm run preview:consumer
 ```
 
+## Shared product passport UI
+
+Both applications render batch histories with the same component, `src/components/ProductPassport.tsx`, styled by `src/components/passport.css`. The layout is the sticky product summary on the left and an alternating stage timeline on the right, where each stage is either `ok` (green check) or `warning` (amber, deviation resolved). Design tokens live in `src/theme.css` and are imported before each app's own stylesheet.
+
+- Producer: open a row in the barcode library, or link directly with `/?barcode=BX-12480`.
+- Consumer: verify a code (`/verify/demo`) to open the passport for that product.
+
+Stage fixtures used by both apps live in `src/data/histories.ts`. Each stage needs `date`, `title`, `detail`, `location`, `country`, `state`, `tag`, and `kind`.
+
 ## Deploy to Cloudflare
 
 ### Local CLI deployment

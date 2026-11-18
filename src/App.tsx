@@ -1,33 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { ProductPassport } from "./components/ProductPassport";
+import type { PassportStage } from "./components/ProductPassport";
+import { fieldNotesStages, handWashStages, jacketStages, mugStages, oatMilkStages } from "./data/histories";
 
-type Gs1History = { date: string; action: string; location: string; detail: string };
 type Barcode = {
   id: string; name: string; format: string; value: string; scans: number;
   status: "Active" | "Draft" | "Archived"; updated: string; gtin: string; batch: string;
   serial: string; manufactureDate: string; expiryDate: string; bestBefore: string;
   manufacturer: string; category: string; country: string; netContent: string;
-  packaging: string; lotSize: number; history: Gs1History[];
+  packaging: string; lotSize: number; stages: PassportStage[];
 };
 
 const seedBarcodes: Barcode[] = [
   { id: "BX-12480", name: "Organic Oat Milk 1L", format: "GS1 DataMatrix", value: "(01)09506000134352(10)NS20261104(21)10482001(17)271130", scans: 128462, status: "Active", updated: "Today, 09:42", gtin: "09506000134352", batch: "NS20261104", serial: "10482001", manufactureDate: "04 Nov 2026", expiryDate: "30 Nov 2027", bestBefore: "30 Nov 2027", manufacturer: "Northstar Foods LLC", category: "Plant-based beverages", country: "Uzbekistan", netContent: "1 L", packaging: "Carton, retail unit", lotSize: 48000,
-    history: [
-      { date: "04 Nov 2026, 08:12", action: "Commissioned", location: "Tashkent Filling Plant", detail: "GTIN and serial number registered; EPCIS commission event." },
-      { date: "04 Nov 2026, 11:45", action: "Aggregation", location: "Tashkent Packing Line 3", detail: "Retail unit packed into case PAL-NS-77120." },
-      { date: "05 Nov 2026, 16:20", action: "Shipped", location: "Tashkent Distribution Center", detail: "Dispatched to Northstar Central Warehouse." },
-      { date: "06 Nov 2026, 09:08", action: "Received", location: "Northstar Central Warehouse", detail: "Quantity 2,400 retail units verified by GS1 GRAI." },
-      { date: "12 Nov 2026, 13:31", action: "Delivered", location: "Berlin Central Pharmacy", detail: "Retail unit observed at final destination." },
-      { date: "18 Nov 2026, 09:42", action: "Verified", location: "Berlin, Germany", detail: "Public verification completed; no anomaly detected." }
-    ] },
+    stages: oatMilkStages },
   { id: "BX-12479", name: "Alpine Trail Jacket", format: "GS1 Digital Link", value: "https://id.gs1.org/01/09506000184721", scans: 89243, status: "Active", updated: "Yesterday", gtin: "09506000184721", batch: "AJ20261109", serial: "847210042", manufactureDate: "09 Nov 2026", expiryDate: "Not applicable", bestBefore: "Not applicable", manufacturer: "Alpine Works AG", category: "Outdoor apparel", country: "Uzbekistan", netContent: "Size M", packaging: "Polybag, retail unit", lotSize: 12500,
-    history: [{ date: "09 Nov 2026, 07:30", action: "Commissioned", location: "Samarkand Assembly Hall", detail: "GTIN, batch and serial identifiers registered." }, { date: "10 Nov 2026, 15:10", action: "Shipped", location: "Samarkand Distribution Hub", detail: "Customer order NS-88421 handed to carrier." }, { date: "13 Nov 2026, 12:44", action: "Received", location: "Berlin Retail Store 12", detail: "Inventory received and linked to store shelf location." }] },
+    stages: jacketStages },
   { id: "BX-12478", name: "Citrus Hand Wash 250ml", format: "GS1 DataMatrix", value: "(01)09506000984716(10)HW261104(21)984716002", scans: 63418, status: "Active", updated: "12 Nov 2026", gtin: "09506000984716", batch: "HW261104", serial: "984716002", manufactureDate: "04 Nov 2026", expiryDate: "31 Oct 2028", bestBefore: "31 Oct 2028", manufacturer: "Northstar Consumer Care", category: "Personal care", country: "Uzbekistan", netContent: "250 ml", packaging: "Bottle, retail unit", lotSize: 76000,
-    history: [{ date: "04 Nov 2026, 06:15", action: "Commissioned", location: "Tashkent Plant A", detail: "Batch and unique serial assigned." }, { date: "04 Nov 2026, 14:52", action: "Aggregated", location: "Tashkent Plant A", detail: "Linked to case ID 095060009999900012." }, { date: "08 Nov 2026, 10:22", action: "Shipped", location: "Tashkent Export Terminal", detail: "Manifest HSW-2468 departed for regional distribution." }] },
+    stages: handWashStages },
   { id: "BX-12477", name: "Studio Mug / Clay", format: "GS1 Digital Link", value: "https://id.gs1.org/01/09506000821095", scans: 21912, status: "Draft", updated: "10 Nov 2026", gtin: "09506000821095", batch: "MUG-DRAFT-04", serial: "821095104", manufactureDate: "08 Nov 2026", expiryDate: "Not applicable", bestBefore: "Not applicable", manufacturer: "Studio Northstar", category: "Tableware", country: "Uzbekistan", netContent: "1 mug", packaging: "Gift box", lotSize: 3200,
-    history: [{ date: "08 Nov 2026, 12:10", action: "Identifier allocated", location: "Northstar Design Office", detail: "Draft GTIN and linked data page allocated." }] },
+    stages: mugStages },
   { id: "BX-12476", name: "Field Notes No. 04", format: "GS1 DataMatrix", value: "(01)09506000018472(10)FN041108(21)184720004", scans: 7648, status: "Archived", updated: "08 Nov 2026", gtin: "09506000018472", batch: "FN041108", serial: "184720004", manufactureDate: "08 Nov 2026", expiryDate: "Not applicable", bestBefore: "Not applicable", manufacturer: "Field Station Publishing", category: "Stationery", country: "Uzbekistan", netContent: "1 notebook", packaging: "Shrink wrap", lotSize: 18000,
-    history: [{ date: "08 Nov 2026, 09:20", action: "Commissioned", location: "Tashkent Print Works", detail: "Identifier issued for archived edition." }, { date: "18 Nov 2026, 10:04", action: "Archived", location: "Northstar Catalog", detail: "Edition closed after inventory depletion." }] }
+    stages: fieldNotesStages }
 ];
 
 type BarcodeDetectorResult = { rawValue: string };
@@ -43,7 +38,10 @@ export default function App() {
   const [status, setStatus] = useState("All statuses");
   const [createOpen, setCreateOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const [selectedBarcode, setSelectedBarcode] = useState<Barcode | null>(null);
+  const [selectedBarcode, setSelectedBarcode] = useState<Barcode | null>(() => {
+    const key = new URLSearchParams(window.location.search).get("barcode");
+    return key ? seedBarcodes.find((item) => item.id === key || item.gtin === key) ?? null : null;
+  });
   const uzbekNav: Record<string, string> = {
     "Overview": "Umumiy ko'rinish",
     "Barcode library": "Shtrix kodlar kutubxonasi",
@@ -97,13 +95,28 @@ export default function App() {
       netContent: "Pending",
       packaging: "Pending",
       lotSize: 0,
-      history: [{ date: "Just now", action: "Draft created", location: "SignalCode workspace", detail: "Record created and awaiting GS1 identifier verification." }]
+      stages: [{
+        date: "Bugun",
+        title: "Qoralama yaratildi",
+        detail: "Yozuv yaratildi va GS1 identifikatori tasdiqlanishini kutmoqda.",
+        location: "SignalCode ish maydoni",
+        country: "O'zbekiston",
+        state: "warning",
+        tag: "Tasdiqlash kutilmoqda",
+        kind: "release"
+      }]
     }, ...current]);
     setCreateOpen(false);
     notify("Shtrix kod qoralama sifatida saqlandi");
   }
 
-  if (route === "Scan") return <ScanPage onBack={() => navigate("Overview")} />;
+  if (route === "Scan") return <ScanPage barcodes={barcodes} onBack={() => navigate("Overview")} onOpenPassport={(code) => {
+    const digits = code.replace(/\D/g, "").slice(0, 14);
+    const match = barcodes.find((item) => code.includes(item.gtin) || item.gtin === digits);
+    if (match) setSelectedBarcode(match);
+    else notify("Bu kod uchun partiya tarixi topilmadi");
+  }} />;
+  if (selectedBarcode) return <ProductHistory barcode={selectedBarcode} onClose={() => { setSelectedBarcode(null); window.history.replaceState({}, "", "/"); }} />;
 
   return (
     <div className="shell">
@@ -167,7 +180,6 @@ export default function App() {
         </form>
       </div>}
       {toast && <div className="toast" role="status">{toast}</div>}
-      {selectedBarcode && <ProductHistory barcode={selectedBarcode} onClose={() => setSelectedBarcode(null)} />}
     </div>
   );
 }
@@ -201,31 +213,36 @@ function ImportsView({ notify }: { notify: (message: string) => void }) {
 }
 
 function ProductHistory({ barcode, onClose }: { barcode: Barcode; onClose: () => void }) {
-  return <div className="historyBackdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <aside className="historyDrawer" aria-label={`${barcode.name} GS1 product history`}>
-      <header className="historyHeader"><div><small>GS1 mahsulot yozuvi</small><h2>{barcode.name}</h2></div><button type="button" onClick={onClose} aria-label="Yopish">×</button></header>
-      <div className="historyStatus"><span className={`badge ${barcode.status.toLowerCase()}`}>{barcode.status === "Active" ? "Faol" : barcode.status === "Draft" ? "Qoralama" : "Arxivlangan"}</span><span>{barcode.scans.toLocaleString("uz-UZ")} bog'langan tasdiqlash</span></div>
-      <section className="identityGrid">
-        <div><span>GTIN</span><b>{barcode.gtin}</b></div>
-        <div><span>Partiya / lot (AI 10)</span><b>{barcode.batch}</b></div>
-        <div><span>Seriya (AI 21)</span><b>{barcode.serial}</b></div>
-        <div><span>Ishlab chiqarilgan sana (AI 11)</span><b>{barcode.manufactureDate}</b></div>
-        <div><span>Yaroqlilik muddati (AI 17)</span><b>{barcode.expiryDate}</b></div>
-        <div><span>Eng yaxshi sarf sanasi</span><b>{barcode.bestBefore}</b></div>
-        <div><span>Ishlab chiqaruvchi</span><b>{barcode.manufacturer}</b></div>
-        <div><span>Sof hajmi</span><b>{barcode.netContent}</b></div>
-        <div><span>Mamlakat</span><b>{barcode.country}</b></div>
-        <div><span>Qadoqlash</span><b>{barcode.packaging}</b></div>
-        <div><span>Lot hajmi</span><b>{barcode.lotSize ? barcode.lotSize.toLocaleString("uz-UZ") : "Kutilmoqda"}</b></div>
-        <div><span>Turkum</span><b>{barcode.category}</b></div>
-      </section>
-      <section className="historyPayload"><small>Asosiy 2D ma'lumot</small><code>{barcode.value}</code></section>
-      <section className="historyTimeline"><div className="historySectionTitle"><h3>GS1 EPCIS tarixi</h3><span>{barcode.history.length} hodisa</span></div>{barcode.history.map((event, index) => <article key={`${event.date}-${event.action}`}><i>{index + 1}</i><div><time>{event.date}</time><h4>{event.action}</h4><b>{event.location}</b><p>{event.detail}</p></div></article>)}</section>
-    </aside>
-  </div>;
+  const statusCopy = barcode.status === "Active"
+    ? { title: "Partiya haqiqiy", caption: "Barcha ishlab chiqarish bosqichlari tasdiqlangan" }
+    : barcode.status === "Draft"
+      ? { title: "Qoralama — tasdiqlash kutilmoqda", caption: "Identifikator hali to'liq tasdiqlanmagan", tone: "warning" as const }
+      : { title: "Partiya arxivlangan", caption: "Yozuv keyingi tekshiruvlar uchun saqlangan" };
+
+  return (
+    <div className="passportPage">
+      <ProductPassport
+        eyebrow={`${barcode.category} · ${barcode.format}`}
+        name={barcode.name}
+        description={`Partiya ${barcode.batch} ning xomashyodan yakuniy xaridorgacha bo'lgan yo'li: ${barcode.stages.length} bosqich.`}
+        meta={[
+          { label: "Ishlab chiqaruvchi", value: barcode.manufacturer },
+          { label: "Partiya", value: barcode.batch },
+          { label: "Yaroqlilik muddati", value: barcode.expiryDate },
+          { label: "GTIN", value: barcode.gtin }
+        ]}
+        status={statusCopy}
+        stages={barcode.stages}
+        code={barcode.value}
+        onBack={onClose}
+        backLabel="Kutubxonaga qaytish"
+        actions={<button type="button" className="passportPrimary" onClick={() => navigator.clipboard?.writeText(barcode.value)}>Havolani nusxalash</button>}
+      />
+    </div>
+  );
 }
 
-function ScanPage({ onBack }: { onBack: () => void }) {
+function ScanPage({ onBack, barcodes, onOpenPassport }: { onBack: () => void; barcodes: Barcode[]; onOpenPassport: (code: string) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [code, setCode] = useState("");
@@ -288,6 +305,10 @@ function ScanPage({ onBack }: { onBack: () => void }) {
     } catch { setError("Rasmni o'qib bo'lmadi. Boshqa suratni sinab ko'ring."); }
   }
 
+  const match = verifiedCode
+    ? barcodes.find((item) => verifiedCode.includes(item.gtin) || item.gtin === verifiedCode.replace(/\D/g, "").slice(0, 14))
+    : undefined;
+
   return <main className="scanShell">
     <header className="scanHeader"><button className="scanBrand" onClick={onBack}><span className="logoMark">S</span><strong>signal<b>code</b></strong></button><span>O'Z / RU / EN</span></header>
     <section className="scanHero"><div className="eyebrow">Dori vositasini jamoat tekshiruvi</div><h1>Ishonishdan oldin dorini tekshiring.</h1><p>Paketdagi 2D kodni skanerlab, mahsulot, partiya, yaroqlilik muddati va sifat dalillarini ko'ring.</p>
@@ -295,7 +316,18 @@ function ScanPage({ onBack }: { onBack: () => void }) {
       {error && <div className="scanError">{error}</div>}
       <div className="orRow"><span>yoki kodni qo'lda kiriting</span></div>
       <form className="verifyForm" onSubmit={(event) => { event.preventDefault(); verify(code); }}><input value={code} onChange={(event) => setCode(event.target.value)} placeholder="GTIN, seriya yoki shtrix kod ma'lumoti" required /><button className="primaryButton">Dorini tekshirish →</button></form>
-      {verifiedCode && <article className="result"><div className="resultTop"><div><small>SignalCode natijasi · GS1 EPCIS tasdiqlangan</small><h2>Organic Oat Milk 1L</h2></div><b>✓ Tasdiqlangan mahsulot</b></div><div className="resultCode"><span>Tekshirilgan kod</span><code>{verifiedCode}</code></div><div className="resultGrid"><div><span>Ishlab chiqaruvchi</span><b>Northstar Foods LLC</b></div><div><span>GTIN / partiya / seriya</span><b>09506000134352 · NS20261104 · 10482001</b></div><div><span>Ishlab chiqarilgan / yaroqlilik</span><b>04 noy. 2026 · 30 noy. 2027</b></div><div><span>Eng so'nggi kuzatuv hodisasi</span><b>Tasdiqlangan · Berlin · 18 noy. 2026</b></div></div><div className="scanHistory"><h3>Bog'langan mahsulot tarixi</h3><ol><li><span>Ro'yxatga olindi</span><b>Toshkent quyish zavodi · 04 noy. 2026</b></li><li><span>Biriktirildi</span><b>3-qadoqlash liniyasi · 04 noy. 2026</b></li><li><span>Jo'natildi va qabul qilindi</span><b>Distribyutor markazi · 05–06 noy. 2026</b></li><li><span>Yetkazildi va tasdiqlandi</span><b>Berlin · 12–18 noy. 2026</b></li></ol></div></article>}
+      {verifiedCode && <article className="result">
+        <div className="resultTop"><div><small>SignalCode natijasi · GS1 EPCIS tekshiruvi</small><h2>{match ? match.name : "Yozuv topilmadi"}</h2></div><b>{match ? "✓ Tasdiqlangan mahsulot" : "! Tekshiruvni talab qiladi"}</b></div>
+        <div className="resultCode"><span>Tekshirilgan kod</span><code>{verifiedCode}</code></div>
+        <div className="resultGrid">
+          <div><span>Ishlab chiqaruvchi</span><b>{match ? match.manufacturer : "Aniqlanmadi"}</b></div>
+          <div><span>GTIN / partiya / seriya</span><b>{match ? `${match.gtin} · ${match.batch} · ${match.serial}` : "—"}</b></div>
+          <div><span>Ishlab chiqarilgan / yaroqlilik</span><b>{match ? `${match.manufactureDate} · ${match.expiryDate}` : "—"}</b></div>
+          <div><span>Eng so'nggi bosqich</span><b>{match ? `${match.stages.at(-1)?.title} · ${match.stages.at(-1)?.location}` : "—"}</b></div>
+        </div>
+        {match && <div className="scanHistory"><h3>Partiya bosqichlari</h3><ol>{match.stages.slice(0, 4).map((stage) => <li key={stage.title}><span>{stage.title}</span><b>{stage.location} · {stage.date}</b></li>)}</ol></div>}
+        {match && <div className="scanPassportAction"><button type="button" className="passportPrimary" onClick={() => onOpenPassport(verifiedCode)}>To'liq partiya pasportini ochish</button></div>}
+      </article>}
     </section>
   </main>;
 }

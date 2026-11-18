@@ -1,0 +1,205 @@
+.passport {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+  width: min(1680px, 100%);
+  margin: 0 auto;
+  padding: 48px 48px 72px;
+}
+
+.passportIntro {
+  position: sticky;
+  top: 0;
+  flex: 0 0 404px;
+  padding-top: 6px;
+}
+.passportIntroInner { padding-bottom: 24px; }
+.passportTopBar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+
+.passportBack {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.passportBack:hover { transform: translateX(-2px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.22); }
+
+.passportEyebrow { margin: 44px 0 0; color: var(--muted); font-size: 16px; }
+.passport h1 {
+  margin: 10px 0 0;
+  color: var(--ink-strong);
+  font-size: clamp(36px, 3.9vw, 58px);
+  line-height: 1.02;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.passportDescription { max-width: 400px; margin: 22px 0 0; color: var(--muted); font-size: 16px; line-height: 1.45; }
+
+.passportMeta { margin-top: 32px; }
+.passportMetaRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+}
+.passportMetaRow:last-child { border-bottom: 1px solid var(--line); }
+.passportMetaRow span { color: var(--muted); }
+.passportMetaRow b { font-weight: 500; text-align: right; }
+
+.passportStatus {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 28px;
+  padding: 16px 22px 16px 18px;
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+.passportStatus svg { flex: none; }
+.passportStatus strong { display: block; font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+.passportStatus span { display: block; margin-top: 2px; color: var(--muted); font-size: 14px; }
+
+.passportLegend { display: flex; flex-direction: column; gap: 12px; margin-top: 28px; color: #555; font-size: 15px; line-height: 1.35; }
+.passportLegend span { display: flex; gap: 10px; align-items: flex-start; }
+.passportLegend i { width: 12px; height: 12px; flex: none; margin-top: 4px; border-radius: 50%; }
+.passportLegend i.ok { background: var(--ok); }
+.passportLegend i.warning { background: var(--warn); }
+
+.passportCode { display: grid; gap: 6px; margin-top: 24px; padding: 14px 16px; border-radius: 18px; background: var(--surface); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); }
+.passportCode span { color: var(--muted); font-size: 12px; }
+.passportCode code { color: #35513f; font-size: 12px; overflow-wrap: anywhere; }
+
+.passportActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.passportPrimary {
+  height: 46px;
+  padding: 0 20px;
+  border: 1px solid var(--dark);
+  border-radius: 14px;
+  background: var(--dark);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 14px 24px -14px rgba(0, 0, 0, 0.5);
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+.passportPrimary:hover { background: var(--dark-soft); transform: translateY(-1px); }
+.passportNote { margin: 24px 0 0; color: var(--muted); font-size: 13px; }
+
+.passportTimeline { position: relative; flex: 1; min-width: 0; padding-bottom: 24px; }
+.stageList { position: relative; display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.stageList::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #d3d7dd; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr); align-items: start; }
+
+.stageNode {
+  grid-column: 2;
+  grid-row: 1;
+  z-index: 2;
+  justify-self: center;
+  width: 52px;
+  height: 52px;
+  margin-top: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 500;
+  font-style: normal;
+}
+.stageNode.ok { border: 2px solid var(--ok); }
+.stageNode.warning { border: 2px solid var(--warn); box-shadow: 0 0 0 7px rgba(245, 158, 11, 0.16); }
+.stage-left .stageNode { margin-top: 44px; }
+.stage-right .stageNode { margin-top: 8px; }
+
+.stageCard {
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+  padding: 14px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.stage-left .stageCard { grid-column: 1; margin-top: 8px; }
+.stage-right .stageCard { grid-column: 3; margin-top: 44px; }
+.stageCard.warning { box-shadow: var(--shadow-card), 0 0 0 1px rgba(245, 158, 11, 0.22); }
+
+.stageTop { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 8px 0; }
+.stageTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 15px 0 12px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.stageTag.ok { background: var(--ok-soft); color: var(--ok-ink); }
+.stageTag.warning { background: var(--warn-soft); color: var(--warn-ink); }
+
+.stageDate { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 3px; border-radius: var(--radius-pill); background: var(--dark); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18); }
+.stageDate b { padding: 0 9px; color: #fff; font-size: 11px; font-weight: 500; letter-spacing: 0.05em; }
+.stageDate em { min-width: 42px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; background: var(--surface); color: var(--ink); font-size: 14px; font-style: normal; font-weight: 600; }
+
+.stageCard h3 { margin: 22px 8px 0; color: #333; font-size: clamp(20px, 1.75vw, 27px); line-height: 1.15; font-weight: 500; }
+.stageCard p { margin: 10px 8px 18px; color: var(--muted); font-size: 15px; line-height: 1.4; }
+
+.stageVisual { position: relative; flex: 1; min-height: 168px; border-radius: 28px; overflow: hidden; background-size: cover; background-position: center; }
+.stageVisual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 85% 5%, rgba(255, 255, 255, 0.45), transparent 55%),
+    radial-gradient(90% 80% at 10% 100%, rgba(0, 0, 0, 0.5), transparent 70%);
+}
+.stagePlace { position: absolute; left: 22px; bottom: 20px; display: flex; align-items: flex-start; gap: 9px; color: #fff; font-size: 16px; line-height: 1.3; }
+.stagePlace svg { flex: none; margin-top: 2px; }
+.stagePlace div { display: flex; flex-direction: column; }
+
+.stageFade { display: none; }
+
+@media (max-width: 1180px) {
+  .passport { gap: 30px; padding: 36px 28px 56px; }
+  .passportIntro { flex-basis: 340px; }
+  .passport h1 { font-size: clamp(32px, 4.6vw, 44px); }
+  .stage { grid-template-columns: minmax(0, 1fr) 68px minmax(0, 1fr); }
+  .stageCard { min-height: 0; }
+  .stageVisual { min-height: 130px; }
+}
+
+@media (max-width: 1000px) {
+  .passport { flex-direction: column; gap: 8px; padding: 24px 16px 56px; }
+  .passportIntro { position: static; flex: none; width: 100%; }
+  .passportEyebrow { margin-top: 26px; }
+  .passportDescription { max-width: none; }
+  .passportMetaRow { font-size: 14px; }
+  .passportTimeline { width: 100%; margin-top: 28px; }
+
+  .stageList::before { left: 26px; }
+  .stage { grid-template-columns: 52px minmax(0, 1fr); gap: 0 14px; }
+  .stageNode, .stage-left .stageNode, .stage-right .stageNode { grid-column: 1; grid-row: 1; justify-self: start; width: 42px; height: 42px; margin-top: 22px; font-size: 15px; }
+  .stage-left .stageCard, .stage-right .stageCard { grid-column: 2; margin-top: 0; }
+  .stageCard { padding: 12px; border-radius: 26px; }
+  .stageCard h3 { margin-top: 18px; font-size: 21px; }
+  .stageCard p { font-size: 14px; margin-bottom: 14px; }
+  .stageVisual { min-height: 118px; border-radius: 20px; }
+  .stagePlace { left: 16px; bottom: 14px; font-size: 14px; }
+  .stageTag { font-size: 13px; padding: 0 12px 0 10px; }
+}

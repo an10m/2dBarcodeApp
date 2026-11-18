@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { registerSW } from "virtual:pwa-register";
 import ConsumerApp from "./ConsumerApp";
+import "../theme.css";
+import "../components/passport.css";
 import "./consumer.css";
 
 document.documentElement.lang = "uz";

@@ -1,4 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { ProductPassport } from "../components/ProductPassport";
+import type { PassportStage } from "../components/ProductPassport";
+import { jacketStages, oatMilkStages, paracetamolStages } from "../data/histories";
 
 type Product = {
   name: string;
@@ -12,6 +15,8 @@ type Product = {
   manufactureDate: string;
   expiryDate: string;
   country: string;
+  description: string;
+  stages: PassportStage[];
 };
 
 type ScanResult = {
@@ -22,17 +27,34 @@ type ScanResult = {
 
 const products: Product[] = [
   {
+    name: "Paracetamol 500 mg",
+    gtin: "09506000487120",
+    batch: "PM-260814",
+    serial: "48120007",
+    payload: "(01)09506000487120(10)PM-260814(21)48120007(17)280814",
+    manufacturer: "PharmaMed Uzbekistan",
+    category: "Dori vositasi",
+    netContent: "20 tabletka",
+    manufactureDate: "14 avg. 2026",
+    expiryDate: "14 avg. 2028",
+    country: "O'zbekiston",
+    description: "Partiya xomashyodan dorixona javonigacha bo'lgan 9 bosqichni bosib o'tdi. Uchtasida og'ish bo'lgan, ular hal qilindi va tarixda saqlandi.",
+    stages: paracetamolStages
+  },
+  {
     name: "Organic Oat Milk 1L",
     gtin: "09506000134352",
     batch: "NS20261104",
     serial: "10482001",
     payload: "(01)09506000134352(10)NS20261104(21)10482001(17)271130",
     manufacturer: "Northstar Foods LLC",
-    category: "Plant-based beverages",
+    category: "O'simlik asosidagi ichimlik",
     netContent: "1 L",
-    manufactureDate: "04 Nov 2026",
-    expiryDate: "30 Nov 2027",
-    country: "Uzbekistan"
+    manufactureDate: "04 noy. 2026",
+    expiryDate: "30 noy. 2027",
+    country: "O'zbekiston",
+    description: "Suli ichimligi Toshkent quyish zavodida ishlab chiqarilib, Berlin savdo nuqtasiga yetkazildi. Barcha bosqichlar tasdiqlangan.",
+    stages: oatMilkStages
   },
   {
     name: "Alpine Trail Jacket",
@@ -41,11 +63,13 @@ const products: Product[] = [
     serial: "847210042",
     payload: "https://id.gs1.org/01/09506000184721",
     manufacturer: "Alpine Works AG",
-    category: "Outdoor apparel",
-    netContent: "Size M",
-    manufactureDate: "09 Nov 2026",
-    expiryDate: "Not applicable",
-    country: "Uzbekistan"
+    category: "Outdoor kiyim",
+    netContent: "M o'lcham",
+    manufactureDate: "09 noy. 2026",
+    expiryDate: "Amal qilmaydi",
+    country: "O'zbekiston",
+    description: "Samarqandda tikilgan kurtka partiyasi Berlin do'koniga yetkazildi. Barcha bosqichlar izohsiz o'tdi.",
+    stages: jacketStages
   }
 ];
 
@@ -89,9 +113,11 @@ function parseGs1Payload(value: string) {
 function findProduct(value: string): Product | undefined {
   const fields = parseGs1Payload(value);
   const gtin = fields["01"] || onlyDigits(value).slice(0, 14);
+  const demo = /^(demo|namuna|paracetamol)$/i.test(value.trim());
   return products.find((product) => product.gtin === gtin ||
     value.includes(product.gtin) ||
-    value.includes(product.payload));
+    value.includes(product.payload) ||
+    (demo && product === products[0]));
 }
 
 export default function ConsumerApp() {
@@ -118,10 +144,11 @@ export default function ConsumerApp() {
   function verify(value: string) {
     const payload = value.trim();
     if (!payload) return;
-    setCode(payload);
-    setError("");
     const product = findProduct(payload);
-    setResult(product ? { kind: "verified", payload, product } : { kind: "unknown", payload });
+    const shown = product && /^(demo|namuna|paracetamol)$/i.test(payload) ? product.payload : payload;
+    setCode(shown);
+    setError("");
+    setResult(product ? { kind: "verified", payload: shown, product } : { kind: "unknown", payload });
   }
 
   function stopCamera() {
@@ -199,6 +226,29 @@ export default function ConsumerApp() {
     verify(code);
   }
 
+  if (result?.kind === "verified" && result.product) {
+    const product = result.product;
+    return (
+      <ProductPassport
+        eyebrow="Mahsulot raqamli pasporti"
+        name={product.name}
+        description={product.description}
+        meta={[
+          { label: "Ishlab chiqaruvchi", value: product.manufacturer },
+          { label: "Partiya", value: product.batch },
+          { label: "Yaroqlilik muddati", value: product.expiryDate }
+        ]}
+        status={{ title: "Mahsulot haqiqiy", caption: "Barcha ishlab chiqarish bosqichlari tasdiqlangan" }}
+        stages={product.stages}
+        code={result.payload}
+        top={<button type="button" className="consumerBrand" onClick={reset} aria-label="SignalCode asosiy sahifa"><span className="brandMark">S</span><strong>signal<b>code</b></strong></button>}
+        onBack={reset}
+        backLabel="Yangi kodni tekshirish"
+        actions={<button type="button" className="passportPrimary" onClick={reset}>Yangi kodni tekshirish</button>}
+      />
+    );
+  }
+
   return (
     <main className="consumer">
       <header className="consumerHeader">
@@ -210,75 +260,52 @@ export default function ConsumerApp() {
       </header>
 
       <section className="consumerMain">
-        <div className="eyebrow">Mahsulot ishonchliligini tekshirish</div>
+        <p className="eyebrow">Mahsulot raqamli pasporti</p>
         <h1>Paketdagi kodni skanerlang.</h1>
-        <p className="intro">Mahsulot, ishlab chiqaruvchi, partiya va yaroqlilik ma'lumotlarini bir zumda ko'ring.</p>
+        <p className="intro">Mahsulot, ishlab chiqaruvchi, partiya va uning butun yo'li — bir zumda.</p>
 
-        {!result && (
-          <>
-            <div className="cameraCard">
-              <div className="cameraFrame">
-                {cameraOn ? <video ref={videoRef} muted playsInline /> : <span className="cameraGlyph" aria-hidden="true">⌗</span>}
-                <i /><i /><i /><i />
-              </div>
-              <div className="cameraCopy">
-                <strong>2D kodni kameraga tuting</strong>
-                <span>QR yoki GS1 DataMatrix kodni o'qing.</span>
-                <div className="cameraActions">
-                  <button type="button" className="button secondary" onClick={startCamera}>
-                    {cameraOn ? "Kamerani qayta boshlash" : "Kamerani boshlash"}
-                  </button>
-                  {cameraOn && <button type="button" className="button primary" onClick={scanFrame}>Kodni o'qish</button>}
-                  <label className="button secondary uploadButton">
-                    Rasm yuklash
-                    <input type="file" accept="image/*" onChange={scanImage} />
-                  </label>
-                  {cameraOn && <button type="button" className="stopButton" onClick={stopCamera}>To'xtatish</button>}
-                </div>
-              </div>
+        <div className="cameraCard">
+          <div className="cameraFrame">
+            {cameraOn ? <video ref={videoRef} muted playsInline /> : <span className="cameraGlyph" aria-hidden="true">⌗</span>}
+            <i /><i /><i /><i />
+          </div>
+          <div className="cameraCopy">
+            <strong>2D kodni kameraga tuting</strong>
+            <span>QR yoki GS1 DataMatrix kodni o'qing.</span>
+            <div className="cameraActions">
+              <button type="button" className="button secondary" onClick={startCamera}>
+                {cameraOn ? "Kamerani qayta boshlash" : "Kamerani boshlash"}
+              </button>
+              {cameraOn && <button type="button" className="button primary" onClick={scanFrame}>Kodni o'qish</button>}
+              <label className="button secondary uploadButton">
+                Rasm yuklash
+                <input type="file" accept="image/*" onChange={scanImage} />
+              </label>
+              {cameraOn && <button type="button" className="stopButton" onClick={stopCamera}>To'xtatish</button>}
             </div>
+          </div>
+        </div>
 
-            {error && <div className="consumerError" role="alert">{error}</div>}
+        {error && <div className="consumerError" role="alert">{error}</div>}
 
-            <div className="divider"><span>yoki kodni qo'lda kiriting</span></div>
-            <form className="manualForm" onSubmit={submit}>
-              <input
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-                placeholder="GTIN, Digital Link yoki GS1 ma'lumot"
-                aria-label="Mahsulot kodi"
-              />
-              <button className="button primary" type="submit">Tekshirish</button>
-            </form>
-          </>
-        )}
-
-        {result?.kind === "verified" && result.product && (
-          <article className="verifiedCard">
-            <div className="verifiedTop">
-              <span className="verifiedIcon">✓</span>
-              <div><small>Tekshiruv natijasi</small><h2>{result.product.name}</h2></div>
-              <b>Tasdiqlangan</b>
-            </div>
-            <div className="productGrid">
-              <Info label="Ishlab chiqaruvchi" value={result.product.manufacturer} />
-              <Info label="Kategoriya" value={result.product.category} />
-              <Info label="GTIN" value={result.product.gtin} />
-              <Info label="Partiya" value={result.product.batch} />
-              <Info label="Seriya" value={result.product.serial} />
-              <Info label="Sof hajmi" value={result.product.netContent} />
-              <Info label="Ishlab chiqarilgan" value={result.product.manufactureDate} />
-              <Info label="Yaroqlilik muddati" value={result.product.expiryDate} />
-            </div>
-            <div className="decodedPayload"><small>O'qilgan kod</small><code>{result.payload}</code></div>
-            <button type="button" className="button secondary newScan" onClick={reset}>Yangi kodni tekshirish</button>
-          </article>
-        )}
+        <div className="divider"><span>yoki kodni qo'lda kiriting</span></div>
+        <form className="manualForm" onSubmit={submit}>
+          <input
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            placeholder="GTIN, Digital Link yoki GS1 ma'lumot"
+            aria-label="Mahsulot kodi"
+          />
+          <button className="button primary" type="submit">Tekshirish</button>
+        </form>
+        <p className="demoHint">Namuna uchun <b>demo</b> so'zini kiriting yoki <b>/verify/demo</b> sahifasini oching.</p>
 
         {result?.kind === "unknown" && (
           <article className="unknownCard">
-            <span className="unknownIcon">!</span>
-            <div><small>Tekshiruv natijasi</small><h2>Mahsulot bazadan topilmadi</h2></div>
+            <div className="unknownTop">
+              <span className="unknownIcon">!</span>
+              <div><small>Tekshiruv natijasi</small><h2>Mahsulot bazadan topilmadi</h2></div>
+            </div>
             <p>Bu kod SignalCode katalogida tasdiqlanmagan. Kodni qayta tekshiring yoki sotuvchidan tasdiqlovchi ma'lumot so'rang.</p>
             <div className="decodedPayload"><small>Kiritilgan kod</small><code>{result.payload}</code></div>
             <button type="button" className="button secondary newScan" onClick={reset}>Yana urinish</button>
@@ -287,8 +314,4 @@ export default function ConsumerApp() {
       </section>
     </main>
   );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return <div className="productInfo"><span>{label}</span><b>{value}</b></div>;
 }

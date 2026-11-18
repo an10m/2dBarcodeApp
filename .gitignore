@@ -5,3 +5,4 @@ dist-consumer/
 .env*
 !.env.example
 *.tsbuildinfo
+temp-files/

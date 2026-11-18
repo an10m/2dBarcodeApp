@@ -33,8 +33,8 @@ export default defineConfig({
         short_name: "SignalCode",
         description: "Mahsulot 2D shtrix kodini skanerlash va tekshirish.",
         lang: "uz",
-        theme_color: "#19382a",
-        background_color: "#f5f7f2",
+        theme_color: "#2e2e2e",
+        background_color: "#f3f4f6",
         display: "standalone",
         start_url: "/",
         icons: [

@@ -12,8 +12,8 @@ export default defineConfig({
         name: "SignalCode",
         short_name: "SignalCode",
         description: "Scan, verify, and manage 2D barcodes.",
-        theme_color: "#19382a",
-        background_color: "#f5f7f2",
+        theme_color: "#2e2e2e",
+        background_color: "#f3f4f6",
         display: "standalone",
         start_url: "/",
         icons: [
