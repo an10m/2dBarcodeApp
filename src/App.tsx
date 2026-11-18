@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 
 type Gs1History = { date: string; action: string; location: string; detail: string };
 type Barcode = {
@@ -230,7 +231,21 @@ function ScanPage({ onBack }: { onBack: () => void }) {
   const [code, setCode] = useState("");
   const [cameraOn, setCameraOn] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState(false);
+  const [verifiedCode, setVerifiedCode] = useState("");
+
+  function verify(value: string) {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setCode(trimmed);
+    setVerifiedCode(trimmed);
+    setError("");
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setCameraOn(false);
+  }
 
   async function startCamera() {
     setError("");
@@ -238,30 +253,49 @@ function ScanPage({ onBack }: { onBack: () => void }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
       streamRef.current = stream;
-      if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
       setCameraOn(true);
     } catch { setError("Kamera ruxsat berilmadi yoki kamera mavjud emas."); }
   }
   useEffect(() => () => streamRef.current?.getTracks().forEach((track) => track.stop()), []);
+  useEffect(() => {
+    if (!cameraOn || !videoRef.current || !streamRef.current) return;
+    videoRef.current.srcObject = streamRef.current;
+    void videoRef.current.play();
+  }, [cameraOn]);
 
   async function scanFrame() {
     if (!window.BarcodeDetector || !videoRef.current) { setError("Bu brauzer jonli kod aniqlashni qo'llab-quvvatlamaydi. Kodni qo'lda kiriting."); return; }
     try {
       const detector = new window.BarcodeDetector({ formats: ["qr_code", "data_matrix", "ean_13", "ean_8", "code_128"] });
       const found = await detector.detect(videoRef.current);
-      if (found[0]) { setCode(found[0].rawValue); setResult(true); }
+      if (found[0]) verify(found[0].rawValue);
       else setError("Kod aniqlanmadi. Kodni ramka ichida barqaror tuting.");
     } catch { setError("Jonli skanerlash orqali kod o'qilmadi."); }
+  }
+
+  async function scanImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!window.BarcodeDetector) { setError("Bu brauzer rasm ichidan kod aniqlashni qo'llab-quvvatlamaydi. Kodni qo'lda kiriting."); return; }
+    try {
+      const detector = new window.BarcodeDetector({ formats: ["qr_code", "data_matrix", "ean_13", "ean_8", "code_128"] });
+      const image = await createImageBitmap(file);
+      const found = await detector.detect(image);
+      image.close();
+      if (found[0]) verify(found[0].rawValue);
+      else setError("Rasm ichida kod topilmadi. Aniqroq surat tanlang.");
+    } catch { setError("Rasmni o'qib bo'lmadi. Boshqa suratni sinab ko'ring."); }
   }
 
   return <main className="scanShell">
     <header className="scanHeader"><button className="scanBrand" onClick={onBack}><span className="logoMark">S</span><strong>signal<b>code</b></strong></button><span>O'Z / RU / EN</span></header>
     <section className="scanHero"><div className="eyebrow">Dori vositasini jamoat tekshiruvi</div><h1>Ishonishdan oldin dorini tekshiring.</h1><p>Paketdagi 2D kodni skanerlab, mahsulot, partiya, yaroqlilik muddati va sifat dalillarini ko'ring.</p>
-      <div className="scanCard"><div className="scanFrame">{cameraOn ? <video ref={videoRef} muted playsInline /> : <span>⌁</span>}<i /><i /><i /><i /></div><div><b>Kameradan foydalaning</b><span>Jonli aniqlash qo'llab-quvvatlanadigan brauzerlarda ishlaydi.</span><button className="outlineButton" onClick={startCamera}>{cameraOn ? "Kamerani qayta ishga tushirish" : "Kamerani ishga tushirish"}</button>{cameraOn && <button className="primaryButton scanButton" onClick={scanFrame}>Kodni o'qish</button>}</div></div>
+      <div className="scanCard"><div className="scanFrame">{cameraOn ? <video ref={videoRef} muted playsInline /> : <span>⌁</span>}<i /><i /><i /><i /></div><div><b>Kameradan foydalaning</b><span>Jonli aniqlash qo'llab-quvvatlanadigan brauzerlarda ishlaydi.</span><div className="scanActions"><button type="button" className="outlineButton" onClick={startCamera}>{cameraOn ? "Kamerani qayta ishga tushirish" : "Kamerani ishga tushirish"}</button>{cameraOn && <button type="button" className="primaryButton" onClick={scanFrame}>Kodni o'qish</button>}<label className="outlineButton uploadButton">Rasm yuklash<input type="file" accept="image/*" onChange={scanImage} /></label>{cameraOn && <button type="button" className="textButton" onClick={stopCamera}>To'xtatish</button>}</div></div></div>
       {error && <div className="scanError">{error}</div>}
       <div className="orRow"><span>yoki kodni qo'lda kiriting</span></div>
-      <form className="verifyForm" onSubmit={(event) => { event.preventDefault(); if (code.trim()) setResult(true); }}><input value={code} onChange={(event) => setCode(event.target.value)} placeholder="GTIN, seriya yoki shtrix kod ma'lumoti" required /><button className="primaryButton">Dorini tekshirish →</button></form>
-      {result && <article className="result"><div className="resultTop"><div><small>SignalCode natijasi · GS1 EPCIS tasdiqlangan</small><h2>Organic Oat Milk 1L</h2></div><b>✓ Tasdiqlangan mahsulot</b></div><div className="resultGrid"><div><span>Ishlab chiqaruvchi</span><b>Northstar Foods LLC</b></div><div><span>GTIN / partiya / seriya</span><b>09506000134352 · NS20261104 · 10482001</b></div><div><span>Ishlab chiqarilgan / yaroqlilik</span><b>04 noy. 2026 · 30 noy. 2027</b></div><div><span>Eng so'nggi kuzatuv hodisasi</span><b>Tasdiqlangan · Berlin · 18 noy. 2026</b></div></div><div className="scanHistory"><h3>Bog'langan mahsulot tarixi</h3><ol><li><span>Ro'yxatga olindi</span><b>Toshkent quyish zavodi · 04 noy. 2026</b></li><li><span>Biriktirildi</span><b>3-qadoqlash liniyasi · 04 noy. 2026</b></li><li><span>Jo'natildi va qabul qilindi</span><b>Distribyutor markazi · 05–06 noy. 2026</b></li><li><span>Yetkazildi va tasdiqlandi</span><b>Berlin · 12–18 noy. 2026</b></li></ol></div></article>}
+      <form className="verifyForm" onSubmit={(event) => { event.preventDefault(); verify(code); }}><input value={code} onChange={(event) => setCode(event.target.value)} placeholder="GTIN, seriya yoki shtrix kod ma'lumoti" required /><button className="primaryButton">Dorini tekshirish →</button></form>
+      {verifiedCode && <article className="result"><div className="resultTop"><div><small>SignalCode natijasi · GS1 EPCIS tasdiqlangan</small><h2>Organic Oat Milk 1L</h2></div><b>✓ Tasdiqlangan mahsulot</b></div><div className="resultCode"><span>Tekshirilgan kod</span><code>{verifiedCode}</code></div><div className="resultGrid"><div><span>Ishlab chiqaruvchi</span><b>Northstar Foods LLC</b></div><div><span>GTIN / partiya / seriya</span><b>09506000134352 · NS20261104 · 10482001</b></div><div><span>Ishlab chiqarilgan / yaroqlilik</span><b>04 noy. 2026 · 30 noy. 2027</b></div><div><span>Eng so'nggi kuzatuv hodisasi</span><b>Tasdiqlangan · Berlin · 18 noy. 2026</b></div></div><div className="scanHistory"><h3>Bog'langan mahsulot tarixi</h3><ol><li><span>Ro'yxatga olindi</span><b>Toshkent quyish zavodi · 04 noy. 2026</b></li><li><span>Biriktirildi</span><b>3-qadoqlash liniyasi · 04 noy. 2026</b></li><li><span>Jo'natildi va qabul qilindi</span><b>Distribyutor markazi · 05–06 noy. 2026</b></li><li><span>Yetkazildi va tasdiqlandi</span><b>Berlin · 12–18 noy. 2026</b></li></ol></div></article>}
     </section>
   </main>;
 }

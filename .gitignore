@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-consumer/
 .wrangler/
 .env*
 !.env.example

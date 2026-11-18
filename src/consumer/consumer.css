@@ -1,0 +1,91 @@
+:root {
+  --ink: #17211b;
+  --muted: #748078;
+  --line: #dce5dc;
+  --paper: #f5f7f2;
+  --green: #2f7d52;
+  --deep: #19382a;
+  --lime: #d8f56a;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-width: 320px; min-height: 100%; margin: 0; }
+body { color: var(--ink); background: var(--paper); font-family: Inter, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+
+.consumer { min-height: 100vh; background: linear-gradient(180deg, #edf3eb 0, var(--paper) 300px); }
+.consumerHeader { width: min(940px, 100%); margin: auto; display: flex; align-items: center; justify-content: space-between; padding: 24px 24px 12px; }
+.consumerBrand { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; color: var(--ink); }
+.brandMark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: var(--lime); color: var(--deep); font-weight: 900; }
+.consumerBrand strong { font-size: 18px; }
+.consumerBrand strong b { color: var(--green); }
+.secureLabel { color: var(--muted); font-size: 11px; }
+
+.consumerMain { width: min(650px, 100%); margin: 28px auto 0; padding: 0 24px 64px; }
+.eyebrow { color: var(--green); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.consumerMain h1 { max-width: 520px; margin: 12px 0 10px; font-size: clamp(38px, 7vw, 58px); line-height: 1.02; letter-spacing: -2px; }
+.intro { max-width: 500px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.65; }
+
+.cameraCard { display: flex; align-items: center; gap: 20px; margin-top: 28px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: 0 12px 38px rgba(25,56,42,.06); }
+.cameraFrame { position: relative; width: 110px; height: 110px; flex: none; display: grid; place-items: center; overflow: hidden; border: 1px solid #e4ebe4; border-radius: 10px; background: #f7faf6; color: var(--green); }
+.cameraFrame video { width: 100%; height: 100%; object-fit: cover; }
+.cameraGlyph { font-size: 34px; }
+.cameraFrame i { position: absolute; width: 20px; height: 20px; border: 2px solid var(--green); }
+.cameraFrame i:nth-of-type(1) { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+.cameraFrame i:nth-of-type(2) { top: 10px; right: 10px; border-left: 0; border-bottom: 0; }
+.cameraFrame i:nth-of-type(3) { bottom: 10px; left: 10px; border-right: 0; border-top: 0; }
+.cameraFrame i:nth-of-type(4) { right: 10px; bottom: 10px; border-left: 0; border-top: 0; }
+.cameraCopy { min-width: 0; }
+.cameraCopy strong, .cameraCopy > span { display: block; }
+.cameraCopy > span { margin: 5px 0 12px; color: var(--muted); font-size: 12px; }
+.cameraActions { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+
+.button { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 13px; border-radius: 8px; font-size: 12px; font-weight: 800; }
+.button.primary { border: 1px solid var(--green); background: var(--green); color: #fff; }
+.button.secondary { border: 1px solid var(--line); background: #fff; color: var(--ink); }
+.uploadButton { position: relative; cursor: pointer; }
+.uploadButton input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.stopButton { border: 0; background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; }
+.consumerError { margin-top: 10px; color: #9f5030; font-size: 12px; }
+
+.divider { display: flex; align-items: center; gap: 10px; margin: 22px 0 12px; color: #98a49b; font-size: 10px; text-transform: uppercase; }
+.divider::before, .divider::after { content: ""; height: 1px; flex: 1; background: var(--line); }
+.manualForm { display: flex; gap: 8px; }
+.manualForm input { min-width: 0; flex: 1; height: 44px; padding: 0 13px; border: 1px solid var(--line); border-radius: 8px; outline: none; background: #fff; }
+.manualForm input:focus { border-color: #93b29d; box-shadow: 0 0 0 3px rgba(47,125,82,.08); }
+
+.verifiedCard, .unknownCard { margin-top: 28px; padding: 21px; border-radius: 14px; background: #fff; box-shadow: 0 14px 40px rgba(25,56,42,.07); }
+.verifiedCard { border: 1px solid #b9d8bd; }
+.unknownCard { border: 1px solid #e5cbbd; }
+.verifiedTop { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 12px; }
+.verifiedIcon, .unknownIcon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; font-weight: 900; }
+.verifiedIcon { background: #e5f4e3; color: var(--green); }
+.unknownIcon { float: left; margin-right: 12px; background: #fff0e5; color: #ad6036; }
+.verifiedTop small, .unknownCard small { color: var(--green); font-size: 10px; text-transform: uppercase; }
+.verifiedTop h2, .unknownCard h2 { margin: 5px 0 0; font-size: 24px; }
+.verifiedTop > b { color: #347248; font-size: 11px; }
+.unknownCard h2 { display: inline-block; }
+.unknownCard p { clear: both; margin: 16px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.productGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--line); }
+.productInfo { min-height: 74px; padding: 13px; background: #fff; }
+.productInfo span, .productInfo b { display: block; }
+.productInfo span { color: var(--muted); font-size: 10px; }
+.productInfo b { margin-top: 7px; font-size: 12px; }
+.decodedPayload { display: grid; gap: 6px; margin-top: 14px; padding: 12px; border-radius: 8px; background: #f4f7f2; }
+.decodedPayload small { color: var(--muted); font-size: 10px; }
+.decodedPayload code { overflow-wrap: anywhere; color: #355d43; font-size: 11px; }
+.newScan { width: 100%; margin-top: 14px; }
+
+@media (max-width: 620px) {
+  .consumerHeader { padding: 18px 16px 8px; }
+  .consumerMain { margin-top: 22px; padding: 0 16px 44px; }
+  .consumerMain h1 { letter-spacing: -1.5px; }
+  .cameraCard { align-items: flex-start; padding: 14px; }
+  .cameraFrame { width: 82px; height: 82px; }
+  .manualForm { display: grid; }
+  .manualForm .button { height: 44px; }
+  .verifiedTop { grid-template-columns: 42px 1fr; }
+  .verifiedTop > b { grid-column: 2; }
+  .productGrid { grid-template-columns: 1fr; }
+}

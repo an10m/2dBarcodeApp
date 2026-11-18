@@ -5,9 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:consumer": "vite --config vite.consumer.config.ts --host",
     "build": "tsc -b && vite build",
+    "build:producer": "tsc -b && vite build",
+    "build:consumer": "tsc -b && vite build --config vite.consumer.config.ts",
+    "build:all": "npm run build:producer && npm run build:consumer",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy",
+    "preview:consumer": "vite preview --config vite.consumer.config.ts",
+    "deploy": "npm run build:producer && wrangler deploy --config wrangler.jsonc",
+    "deploy:producer": "npm run build:producer && wrangler deploy --config wrangler.jsonc",
+    "deploy:consumer": "npm run build:consumer && wrangler deploy --config wrangler.consumer.jsonc",
+    "deploy:all": "npm run build:all && wrangler deploy --config wrangler.jsonc && wrangler deploy --config wrangler.consumer.jsonc",
     "lint": "eslint src",
     "typecheck": "tsc -b --pretty false"
   },
