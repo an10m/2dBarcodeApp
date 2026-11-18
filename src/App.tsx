@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { ProductPassport } from "./components/ProductPassport";
 import type { PassportStage } from "./components/ProductPassport";
 import { fieldNotesStages, handWashStages, jacketStages, mugStages, oatMilkStages } from "./data/histories";
+import { localizeDate } from "./lib/format";
 
 type Barcode = {
   id: string; name: string; format: string; value: string; scans: number;
@@ -202,7 +203,7 @@ function Library({ barcodes, query, setQuery, status, setStatus, notify, onSelec
 
 function BarcodeTable({ barcodes, onSelect }: { barcodes: Barcode[]; onSelect: (barcode: Barcode) => void }) {
   if (!barcodes.length) return <div className="empty">Filtrlarga mos shtrix kod topilmadi.</div>;
-  return <div className="tableWrap"><table><thead><tr><th>Shtrix kod</th><th>GS1 identifikatori</th><th>Skanerlar</th><th>Holati</th></tr></thead><tbody>{barcodes.map((item) => <tr key={item.id} className="clickableRow" onClick={() => onSelect(item)}><td><div className="codeName"><span className="pattern" /><div><b>{item.name}</b><small>{item.id} · {item.updated}</small></div></div></td><td><b>{item.gtin}</b><small>Partiya {item.batch}</small></td><td><b>{item.scans.toLocaleString("uz-UZ")}</b></td><td><span className={`badge ${item.status.toLowerCase()}`}>{item.status === "Active" ? "Faol" : item.status === "Draft" ? "Qoralama" : "Arxivlangan"}</span></td></tr>)}</tbody></table></div>;
+  return <div className="tableWrap"><table><thead><tr><th>Shtrix kod</th><th>GS1 identifikatori</th><th>Skanerlar</th><th>Holati</th></tr></thead><tbody>{barcodes.map((item) => <tr key={item.id} className="clickableRow" onClick={() => onSelect(item)}><td><div className="codeName"><span className="pattern" /><div><b>{item.name}</b><small>{item.id} · {localizeDate(item.updated)}</small></div></div></td><td><b>{item.gtin}</b><small>Partiya {item.batch}</small></td><td><b>{item.scans.toLocaleString("uz-UZ")}</b></td><td><span className={`badge ${item.status.toLowerCase()}`}>{item.status === "Active" ? "Faol" : item.status === "Draft" ? "Qoralama" : "Arxivlangan"}</span></td></tr>)}</tbody></table></div>;
 }
 
 function ActivityView() {
@@ -228,7 +229,7 @@ function ProductHistory({ barcode, onClose }: { barcode: Barcode; onClose: () =>
         meta={[
           { label: "Ishlab chiqaruvchi", value: barcode.manufacturer },
           { label: "Partiya", value: barcode.batch },
-          { label: "Yaroqlilik muddati", value: barcode.expiryDate },
+          { label: "Yaroqlilik muddati", value: localizeDate(barcode.expiryDate) },
           { label: "GTIN", value: barcode.gtin }
         ]}
         status={statusCopy}
@@ -322,7 +323,7 @@ function ScanPage({ onBack, barcodes, onOpenPassport }: { onBack: () => void; ba
         <div className="resultGrid">
           <div><span>Ishlab chiqaruvchi</span><b>{match ? match.manufacturer : "Aniqlanmadi"}</b></div>
           <div><span>GTIN / partiya / seriya</span><b>{match ? `${match.gtin} · ${match.batch} · ${match.serial}` : "—"}</b></div>
-          <div><span>Ishlab chiqarilgan / yaroqlilik</span><b>{match ? `${match.manufactureDate} · ${match.expiryDate}` : "—"}</b></div>
+          <div><span>Ishlab chiqarilgan / yaroqlilik</span><b>{match ? `${localizeDate(match.manufactureDate)} · ${localizeDate(match.expiryDate)}` : "—"}</b></div>
           <div><span>Eng so'nggi bosqich</span><b>{match ? `${match.stages.at(-1)?.title} · ${match.stages.at(-1)?.location}` : "—"}</b></div>
         </div>
         {match && <div className="scanHistory"><h3>Partiya bosqichlari</h3><ol>{match.stages.slice(0, 4).map((stage) => <li key={stage.title}><span>{stage.title}</span><b>{stage.location} · {stage.date}</b></li>)}</ol></div>}
