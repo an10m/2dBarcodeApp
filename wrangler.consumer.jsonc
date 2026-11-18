@@ -1,4 +1,6 @@
 {
+  // Wrangler does not auto-discover this filename. Always deploy with
+  // `npm run ci:deploy:consumer` or `--config wrangler.consumer.jsonc`.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "signalcode-verify",
   "compatibility_date": "2026-11-17",
